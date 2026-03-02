@@ -179,6 +179,10 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
         <option value="1.25">1.25x</option>
         <option value="1.5">1.5x</option>
       </select>
+      <select id="voiceSelect" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 8px;font-size:13px;cursor:pointer">
+        <option value="Kore">Female</option>
+        <option value="Puck">Male</option>
+      </select>
       <button class="btn small" id="copyBtn" disabled>&#128203; Copy</button>
     </div>
   </div>
@@ -186,13 +190,6 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   <div class="settings">
     <div class="toggle" id="autoPlayToggle"></div>
     <label for="autoPlayToggle">Auto-play TTS</label>
-    <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
-      <label style="font-size:13px;color:var(--muted)">Voice</label>
-      <select id="voiceSelect" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:5px 8px;font-size:13px;cursor:pointer">
-        <option value="Kore">Female</option>
-        <option value="Charon">Male</option>
-      </select>
-    </span>
   </div>
 </div>
 
@@ -508,8 +505,27 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   const voiceSelect = $("#voiceSelect");
   const savedVoice = localStorage.getItem("translator_voice");
   if (savedVoice) voiceSelect.value = savedVoice;
-  voiceSelect.addEventListener("change", () => {
+  voiceSelect.addEventListener("change", async () => {
     localStorage.setItem("translator_voice", voiceSelect.value);
+    // Regenerate TTS with new voice if we have a translation
+    const translated = outputText.textContent;
+    if (translated && !outputText.classList.contains("empty")) {
+      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+      stopAudioBtn.style.display = "none";
+      playBtn.disabled = true;
+      playBtn.textContent = "\u23F3 ...";
+      try {
+        const res = await apiFetch("/api/translate/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: translated, voice: voiceSelect.value }),
+        });
+        lastAudioBase64 = res.data.audioBase64 || null;
+        playBtn.disabled = !lastAudioBase64;
+        if (autoPlay && lastAudioBase64) playAudio(lastAudioBase64);
+      } catch { /* ignore TTS failure */ }
+      playBtn.textContent = "\uD83D\uDD0A Play";
+    }
   });
 
   const speedSelect = $("#speedSelect");
