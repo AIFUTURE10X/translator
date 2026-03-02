@@ -117,17 +117,18 @@ function pcmToWav(pcmBuffer: Buffer, sampleRate = 24000, channels = 1, bitDepth 
 }
 
 /** Synthesize multilingual TTS using Gemini Flash TTS. Returns base64 WAV. */
-export async function synthesizeMultilingual(text: string): Promise<string> {
+export async function synthesizeMultilingual(text: string, voice?: string): Promise<string> {
   if (!GOOGLE_AI_API_KEY) throw new Error("GOOGLE_AI_API_KEY not configured");
 
   const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
+  const voiceName = voice || TTS_VOICE;
 
   const response = await ai.models.generateContent({
     model: TTS_MODEL,
     contents: [{ role: "user", parts: [{ text: `Read the following text aloud exactly as written:\n\n${text}` }] }],
     config: {
       responseModalities: ["AUDIO"],
-      speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: TTS_VOICE } } },
+      speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
     },
   });
 

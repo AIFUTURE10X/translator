@@ -12,6 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sourceLang = (req.query.sourceLang as string) || "auto";
     const targetLang = req.query.targetLang as string;
     const tts = req.query.tts === "true";
+    const voice = req.query.voice as string | undefined;
 
     if (!targetLang) {
       res.status(400).json({ ok: false, error: "Missing targetLang query param" });
@@ -49,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let audioBase64: string | undefined;
     if (tts && result.translatedText) {
-      try { audioBase64 = await synthesizeMultilingual(result.translatedText); }
+      try { audioBase64 = await synthesizeMultilingual(result.translatedText, voice); }
       catch { /* TTS failed — return translation without audio */ }
     }
 

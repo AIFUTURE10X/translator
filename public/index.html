@@ -186,6 +186,13 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   <div class="settings">
     <div class="toggle" id="autoPlayToggle"></div>
     <label for="autoPlayToggle">Auto-play TTS</label>
+    <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
+      <label style="font-size:13px;color:var(--muted)">Voice</label>
+      <select id="voiceSelect" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:5px 8px;font-size:13px;cursor:pointer">
+        <option value="Kore">Female</option>
+        <option value="Charon">Male</option>
+      </select>
+    </span>
   </div>
 </div>
 
@@ -306,6 +313,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
           sourceLang: sourceLangEl.value,
           targetLang: targetLangEl.value,
           tts: true,
+          voice: voiceSelect.value,
         }),
       });
       showResult(res.data);
@@ -360,6 +368,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
         sourceLang: sourceLangEl.value,
         targetLang: targetLangEl.value,
         tts: "true",
+        voice: voiceSelect.value,
       });
       const res = await apiFetch(`/api/translate/voice?${qs}`, {
         method: "POST",
@@ -393,6 +402,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
         sourceLang: sourceLangEl.value,
         targetLang: targetLangEl.value,
         tts: "true",
+        voice: voiceSelect.value,
       });
       const mime = file.type || "image/jpeg";
       const res = await apiFetch(`/api/translate/image?${qs}`, {
@@ -427,6 +437,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
         sourceLang: sourceLangEl.value,
         targetLang: targetLangEl.value,
         tts: "true",
+        voice: voiceSelect.value,
         mode: "describe",
       });
       const mime = file.type || "image/jpeg";
@@ -493,6 +504,13 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   }
 
   const stopAudioBtn = $("#stopAudioBtn");
+
+  const voiceSelect = $("#voiceSelect");
+  const savedVoice = localStorage.getItem("translator_voice");
+  if (savedVoice) voiceSelect.value = savedVoice;
+  voiceSelect.addEventListener("change", () => {
+    localStorage.setItem("translator_voice", voiceSelect.value);
+  });
 
   const speedSelect = $("#speedSelect");
   const savedSpeed = localStorage.getItem("translator_speed");

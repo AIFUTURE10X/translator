@@ -9,7 +9,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!checkAuth(req, res)) return;
 
   try {
-    const { text, sourceLang, targetLang, tts } = req.body;
+    const { text, sourceLang, targetLang, tts, voice } = req.body;
     if (!text || !targetLang) {
       res.status(400).json({ ok: false, error: "Missing text or targetLang" });
       return;
@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let audioBase64: string | undefined;
     if (tts && result.translatedText) {
-      try { audioBase64 = await synthesizeMultilingual(result.translatedText); }
+      try { audioBase64 = await synthesizeMultilingual(result.translatedText, voice); }
       catch { /* TTS failed — return translation without audio */ }
     }
 
