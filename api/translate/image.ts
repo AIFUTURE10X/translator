@@ -52,7 +52,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let audioBase64: string | undefined;
     if (tts && result.translatedText) {
-      audioBase64 = await synthesizeMultilingual(result.translatedText);
+      try { audioBase64 = await synthesizeMultilingual(result.translatedText); }
+      catch { /* TTS failed — return translation without audio */ }
     }
 
     res.json({
