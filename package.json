@@ -6,7 +6,8 @@
     "dev": "vercel dev"
   },
   "dependencies": {
-    "@google/genai": "^1.43.0"
+    "@google/genai": "^1.43.0",
+    "@vercel/node": "^5.6.9"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
