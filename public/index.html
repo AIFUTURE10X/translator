@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI Crew Pilot · Translator</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--card:#1a1a1a;--border:#333;--accent:#FF6B00;
+  --text:#e5e5e5;--muted:#888;--radius:12px;
+}
+body{
+  font-family:system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.container{width:100%;max-width:640px;padding:12px;display:flex;flex-direction:column;gap:12px}
+
+/* Header */
+header{
+  display:flex;align-items:center;gap:10px;padding:8px 0;
+}
+header .logo{width:28px;height:28px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff}
+header h1{font-size:16px;font-weight:600;color:var(--text)}
+header .dot{color:var(--muted);font-size:14px}
+header .sub{font-size:14px;color:var(--muted);font-weight:400}
+
+/* Language bar */
+.lang-bar{
+  display:flex;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:10px 12px;
+}
+.lang-bar select{
+  flex:1;background:transparent;border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:8px 10px;font-size:14px;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+  cursor:pointer;
+}
+.lang-bar select option{background:#222;color:#e5e5e5}
+.swap-btn{
+  background:none;border:1px solid var(--border);border-radius:8px;
+  color:var(--accent);font-size:18px;padding:6px 10px;cursor:pointer;
+  transition:background .15s;flex-shrink:0;
+}
+.swap-btn:active{background:#333}
+
+/* Panels */
+.panel{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px;display:flex;flex-direction:column;gap:10px;
+}
+.panel-label{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:600}
+.panel textarea{
+  width:100%;min-height:80px;resize:vertical;background:transparent;border:none;
+  color:var(--text);font-size:15px;line-height:1.5;font-family:inherit;outline:none;
+}
+.panel textarea::placeholder{color:#555}
+.output-text{
+  font-size:15px;line-height:1.5;min-height:40px;white-space:pre-wrap;word-break:break-word;
+}
+.output-text.empty{color:#555;font-style:italic}
+
+/* Controls row */
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:10px 16px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);font-size:14px;font-weight:500;
+  cursor:pointer;transition:all .15s;user-select:none;
+}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.primary:active{background:#e05e00}
+.btn.recording{background:#c0392b;border-color:#c0392b;color:#fff;animation:pulse 1.2s infinite}
+.btn.small{padding:8px 12px;font-size:13px}
+
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.5)}
+  50%{box-shadow:0 0 0 8px rgba(192,57,43,0)}
+}
+
+/* Settings */
+.settings{
+  display:flex;align-items:center;gap:10px;padding:6px 0;
+}
+.toggle{
+  position:relative;width:42px;height:24px;background:#333;border-radius:12px;
+  cursor:pointer;transition:background .2s;flex-shrink:0;
+}
+.toggle.on{background:var(--accent)}
+.toggle::after{
+  content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;
+  background:#fff;border-radius:50%;transition:transform .2s;
+}
+.toggle.on::after{transform:translateX(18px)}
+.settings label{font-size:13px;color:var(--muted);cursor:pointer}
+
+/* Loading overlay */
+.loading{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+.loading.active{display:flex}
+.spinner{
+  width:40px;height:40px;border:3px solid #333;border-top-color:var(--accent);
+  border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn.danger{background:#c0392b;border-color:#c0392b;color:#fff}
+
+/* Auth modal */
+.modal{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;
+  align-items:center;justify-content:center;padding:20px;
+}
+.modal.active{display:flex}
+.modal-box{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px;
+}
+.modal-box h2{font-size:18px;font-weight:600}
+.modal-box input{
+  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+  background:var(--bg);color:var(--text);font-size:14px;outline:none;
+}
+.modal-box input:focus{border-color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">A</div>
+    <h1>AI Crew Pilot</h1>
+    <span class="dot">·</span>
+    <span class="sub">Translator</span>
+  </header>
+
+  <div class="lang-bar">
+    <select id="sourceLang"></select>
+    <button class="swap-btn" id="swapBtn" title="Swap languages">&#8652;</button>
+    <select id="targetLang"></select>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Source</div>
+    <textarea id="sourceText" placeholder="Type text to translate..." rows="3"></textarea>
+    <div class="controls">
+      <button class="btn" id="micBtn">&#127908; Record</button>
+      <button class="btn" id="photoBtn">&#128247; Photo</button>
+      <button class="btn" id="identifyBtn">&#128269; What is this?</button>
+      <button class="btn primary" id="translateBtn">Translate &#8594;</button>
+      <button class="btn small" id="clearBtn">&#10005; Clear</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Translation</div>
+    <div class="output-text empty" id="outputText">Translation will appear here</div>
+    <div class="controls">
+      <button class="btn small" id="playBtn" disabled>&#128266; Play</button>
+      <button class="btn small danger" id="stopAudioBtn" style="display:none">&#9632; Stop</button>
+      <button class="btn small" id="copyBtn" disabled>&#128203; Copy</button>
+    </div>
+  </div>
+
+  <div class="settings">
+    <div class="toggle" id="autoPlayToggle"></div>
+    <label for="autoPlayToggle">Auto-play TTS</label>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="identifyFileInput" accept="image/*" capture="environment" style="display:none">
+
+<div class="loading" id="loading"><div class="spinner"></div><button class="btn danger" id="stopBtn">Stop</button></div>
+
+<div class="modal active" id="authModal">
+  <div class="modal-box">
+    <h2>API Token</h2>
+    <p style="font-size:13px;color:var(--muted)">Enter your bot-server API token to connect.</p>
+    <input type="password" id="tokenInput" placeholder="Bearer token...">
+    <button class="btn primary" id="tokenSave" style="align-self:flex-end">Connect</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = (s) => document.querySelector(s);
+  const API_BASE = location.origin;
+
+  let token = localStorage.getItem("translator_token") || "";
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let isRecording = false;
+  let autoPlay = localStorage.getItem("translator_autoplay") === "true";
+  let lastAudioBase64 = null;
+  let currentAbort = null;
+  let currentAudio = null;
+
+  // -- Auth --
+  const authModal = $("#authModal");
+  const tokenInput = $("#tokenInput");
+  const tokenSave = $("#tokenSave");
+
+  if (token) {
+    authModal.classList.remove("active");
+    loadLanguages();
+  } else {
+    tokenInput.focus();
+  }
+
+  tokenSave.addEventListener("click", () => {
+    const val = tokenInput.value.trim();
+    if (!val) return;
+    token = val;
+    localStorage.setItem("translator_token", val);
+    authModal.classList.remove("active");
+    loadLanguages();
+  });
+  tokenInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") tokenSave.click();
+  });
+
+  // -- Auto-play toggle --
+  const autoPlayToggle = $("#autoPlayToggle");
+  if (autoPlay) autoPlayToggle.classList.add("on");
+  autoPlayToggle.addEventListener("click", () => {
+    autoPlay = !autoPlay;
+    autoPlayToggle.classList.toggle("on", autoPlay);
+    localStorage.setItem("translator_autoplay", String(autoPlay));
+  });
+
+  // -- Languages --
+  const sourceLangEl = $("#sourceLang");
+  const targetLangEl = $("#targetLang");
+
+  async function loadLanguages() {
+    try {
+      const res = await apiFetch("/api/translate/languages");
+      const langs = res.data.languages;
+      sourceLangEl.innerHTML = langs.map(
+        (l) => `<option value="${l.code}">${l.name}</option>`
+      ).join("");
+      // Target: no auto-detect
+      targetLangEl.innerHTML = langs.filter((l) => l.code !== "auto").map(
+        (l) => `<option value="${l.code}">${l.name}</option>`
+      ).join("");
+      // Defaults: auto-detect source, Thai target
+      sourceLangEl.value = "auto";
+      targetLangEl.value = "th";
+    } catch (err) {
+      console.error("Failed to load languages:", err);
+      // Fallback: show token prompt again
+      token = "";
+      localStorage.removeItem("translator_token");
+      authModal.classList.add("active");
+    }
+  }
+
+  // -- Swap --
+  $("#swapBtn").addEventListener("click", () => {
+    const s = sourceLangEl.value;
+    const t = targetLangEl.value;
+    if (s === "auto") return; // Can't swap auto-detect
+    sourceLangEl.value = t;
+    targetLangEl.value = s;
+  });
+
+  // -- Translate text --
+  const sourceText = $("#sourceText");
+  const outputText = $("#outputText");
+  const translateBtn = $("#translateBtn");
+  const playBtn = $("#playBtn");
+  const copyBtn = $("#copyBtn");
+
+  translateBtn.addEventListener("click", async () => {
+    const text = sourceText.value.trim();
+    if (!text) return;
+    showLoading(true);
+    try {
+      const res = await apiFetch("/api/translate/text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          sourceLang: sourceLangEl.value,
+          targetLang: targetLangEl.value,
+          tts: true,
+        }),
+      });
+      showResult(res.data);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      showLoading(false);
+    }
+  });
+
+  // -- Microphone --
+  const micBtn = $("#micBtn");
+
+  micBtn.addEventListener("click", async () => {
+    if (isRecording) {
+      stopRecording();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (audioChunks.length === 0) return;
+        const blob = new Blob(audioChunks, { type: "audio/webm" });
+        await sendVoice(blob);
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      micBtn.textContent = "\u23F9 Stop";
+      micBtn.classList.add("recording");
+    } catch (err) {
+      alert("Microphone access denied. Please allow microphone access.");
+    }
+  });
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+    isRecording = false;
+    micBtn.textContent = "\uD83C\uDFA4 Record";
+    micBtn.classList.remove("recording");
+  }
+
+  async function sendVoice(blob) {
+    showLoading(true);
+    try {
+      const qs = new URLSearchParams({
+        sourceLang: sourceLangEl.value,
+        targetLang: targetLangEl.value,
+        tts: "true",
+      });
+      const res = await apiFetch(`/api/translate/voice?${qs}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: blob,
+      });
+      if (res.data.originalText) {
+        sourceText.value = res.data.originalText;
+      }
+      showResult(res.data);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  // -- Photo --
+  const photoBtn = $("#photoBtn");
+  const fileInput = $("#fileInput");
+
+  photoBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    fileInput.value = "";
+    showLoading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const qs = new URLSearchParams({
+        sourceLang: sourceLangEl.value,
+        targetLang: targetLangEl.value,
+        tts: "true",
+      });
+      const mime = file.type || "image/jpeg";
+      const res = await apiFetch(`/api/translate/image?${qs}`, {
+        method: "POST",
+        headers: { "Content-Type": mime },
+        body: buf,
+      });
+      if (res.data.originalText) {
+        sourceText.value = res.data.originalText;
+      }
+      showResult(res.data);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      showLoading(false);
+    }
+  });
+
+  // -- What is this? (image describe + translate) --
+  const identifyBtn = $("#identifyBtn");
+  const identifyFileInput = $("#identifyFileInput");
+
+  identifyBtn.addEventListener("click", () => identifyFileInput.click());
+  identifyFileInput.addEventListener("change", async () => {
+    const file = identifyFileInput.files[0];
+    if (!file) return;
+    identifyFileInput.value = "";
+    showLoading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const qs = new URLSearchParams({
+        sourceLang: sourceLangEl.value,
+        targetLang: targetLangEl.value,
+        tts: "true",
+        mode: "describe",
+      });
+      const mime = file.type || "image/jpeg";
+      const res = await apiFetch(`/api/translate/image?${qs}`, {
+        method: "POST",
+        headers: { "Content-Type": mime },
+        body: buf,
+      });
+      if (res.data.originalText) {
+        sourceText.value = res.data.originalText;
+      }
+      showResult(res.data);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      showLoading(false);
+    }
+  });
+
+  // -- Play / Copy --
+  playBtn.addEventListener("click", () => {
+    if (lastAudioBase64) playAudio(lastAudioBase64);
+  });
+  copyBtn.addEventListener("click", () => {
+    const text = outputText.textContent;
+    if (text) {
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = "\u2713 Copied";
+        setTimeout(() => { copyBtn.textContent = "\uD83D\uDCCB Copy"; }, 1500);
+      });
+    }
+  });
+
+  // -- Helpers --
+  function showResult(data) {
+    outputText.textContent = data.translatedText || "";
+    outputText.classList.toggle("empty", !data.translatedText);
+
+    lastAudioBase64 = data.audioBase64 || null;
+    playBtn.disabled = !lastAudioBase64;
+    copyBtn.disabled = !data.translatedText;
+
+    if (autoPlay && lastAudioBase64) {
+      playAudio(lastAudioBase64);
+    }
+  }
+
+  function showError(msg) {
+    outputText.textContent = "Error: " + msg;
+    outputText.classList.remove("empty");
+    lastAudioBase64 = null;
+    playBtn.disabled = true;
+    copyBtn.disabled = true;
+  }
+
+  const stopAudioBtn = $("#stopAudioBtn");
+
+  function playAudio(base64) {
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    const audio = new Audio("data:audio/wav;base64," + base64);
+    currentAudio = audio;
+    stopAudioBtn.style.display = "";
+    audio.play().catch((e) => console.warn("Audio play failed:", e));
+    audio.addEventListener("ended", () => { stopAudioBtn.style.display = "none"; currentAudio = null; });
+    audio.addEventListener("pause", () => { stopAudioBtn.style.display = "none"; });
+  }
+
+  stopAudioBtn.addEventListener("click", () => {
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    stopAudioBtn.style.display = "none";
+  });
+
+  function showLoading(on) {
+    $("#loading").classList.toggle("active", on);
+    if (!on) currentAbort = null;
+  }
+
+  // -- Stop button --
+  $("#stopBtn").addEventListener("click", () => {
+    if (currentAbort) {
+      currentAbort.abort();
+      currentAbort = null;
+    }
+    showLoading(false);
+  });
+
+  // -- Clear button --
+  $("#clearBtn").addEventListener("click", () => {
+    sourceText.value = "";
+    outputText.textContent = "Translation will appear here";
+    outputText.classList.add("empty");
+    lastAudioBase64 = null;
+    playBtn.disabled = true;
+    copyBtn.disabled = true;
+  });
+
+  async function apiFetch(path, opts = {}) {
+    const controller = new AbortController();
+    currentAbort = controller;
+    const headers = { Authorization: `Bearer ${token}`, ...(opts.headers || {}) };
+    const res = await fetch(API_BASE + path, { ...opts, headers, signal: controller.signal });
+    if (res.status === 401 || res.status === 403) {
+      token = "";
+      localStorage.removeItem("translator_token");
+      authModal.classList.add("active");
+      throw new Error("Authentication failed");
+    }
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || "Request failed");
+    return json;
+  }
+})();
+</script>
+</body>
+</html>
