@@ -172,6 +172,13 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     <div class="controls">
       <button class="btn small" id="playBtn" disabled>&#128266; Play</button>
       <button class="btn small danger" id="stopAudioBtn" style="display:none">&#9632; Stop</button>
+      <select id="speedSelect" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 8px;font-size:13px;cursor:pointer">
+        <option value="0.5">0.5x</option>
+        <option value="0.75">0.75x</option>
+        <option value="1" selected>1x</option>
+        <option value="1.25">1.25x</option>
+        <option value="1.5">1.5x</option>
+      </select>
       <button class="btn small" id="copyBtn" disabled>&#128203; Copy</button>
     </div>
   </div>
@@ -487,9 +494,18 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
   const stopAudioBtn = $("#stopAudioBtn");
 
+  const speedSelect = $("#speedSelect");
+  const savedSpeed = localStorage.getItem("translator_speed");
+  if (savedSpeed) speedSelect.value = savedSpeed;
+  speedSelect.addEventListener("change", () => {
+    localStorage.setItem("translator_speed", speedSelect.value);
+    if (currentAudio) currentAudio.playbackRate = parseFloat(speedSelect.value);
+  });
+
   function playAudio(base64) {
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
     const audio = new Audio("data:audio/wav;base64," + base64);
+    audio.playbackRate = parseFloat(speedSelect.value);
     currentAudio = audio;
     stopAudioBtn.style.display = "";
     audio.play().catch((e) => console.warn("Audio play failed:", e));
