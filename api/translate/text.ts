@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { checkAuth } from "../../lib/auth.js";
-import { translateText, synthesizeMultilingual } from "../../lib/translate.js";
+import { checkAuth } from "../../lib/auth";
+import { translateText, synthesizeMultilingual } from "../../lib/translate";
 
 export const config = { api: { bodyParser: { sizeLimit: "1mb" } } };
 

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { checkAuth } from "../../lib/auth.js";
-import { SUPPORTED_LANGUAGES } from "../../lib/translate.js";
+import { checkAuth } from "../../lib/auth";
+import { SUPPORTED_LANGUAGES } from "../../lib/translate";
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (!checkAuth(req, res)) return;
