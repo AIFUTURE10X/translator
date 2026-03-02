@@ -31,7 +31,10 @@ export const SUPPORTED_LANGUAGES = [
 export interface TranslateResult {
   translatedText: string;
   detectedLang?: string;
+  phonetic?: string;
 }
+
+const NON_LATIN_LANGS = new Set(["th", "ja", "ko", "zh", "ar", "hi", "ru"]);
 
 /** Translate text using Groq Llama */
 export async function translateText(
@@ -47,9 +50,14 @@ export async function translateText(
     ? "the source language (auto-detect it)"
     : SUPPORTED_LANGUAGES.find((l) => l.code === sourceLang)?.name || sourceLang;
 
+  const wantPhonetic = NON_LATIN_LANGS.has(targetLang);
+  const phoneticInstruction = wantPhonetic
+    ? ` Also provide a phonetic romanization of the translation so someone who can't read the script can pronounce it.`
+    : "";
+
   const systemPrompt = isAuto
-    ? `You are a professional translator. Translate the user's text into ${targetName}. Auto-detect the source language. Respond with ONLY a JSON object: {"translatedText": "...", "detectedLang": "<ISO 639-1 code>"}. No extra text.`
-    : `You are a professional translator. Translate the user's text from ${sourceName} into ${targetName}. Respond with ONLY the translated text. No explanations, no extra text.`;
+    ? `You are a professional translator. Translate the user's text into ${targetName}. Auto-detect the source language.${phoneticInstruction} Respond with ONLY a JSON object: {"translatedText": "...", "detectedLang": "<ISO 639-1 code>"${wantPhonetic ? ', "phonetic": "..."' : ""}}. No extra text.`
+    : `You are a professional translator. Translate the user's text from ${sourceName} into ${targetName}.${phoneticInstruction} Respond with ONLY a JSON object: {"translatedText": "..."${wantPhonetic ? ', "phonetic": "..."' : ""}}. No extra text.`;
 
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -76,15 +84,16 @@ export async function translateText(
   const data = (await response.json()) as { choices: { message: { content: string } }[] };
   const raw = data.choices[0]?.message?.content?.trim() || "";
 
-  if (isAuto) {
-    try {
-      const parsed = JSON.parse(raw);
-      return { translatedText: parsed.translatedText || raw, detectedLang: parsed.detectedLang };
-    } catch {
-      return { translatedText: raw };
-    }
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      translatedText: parsed.translatedText || raw,
+      detectedLang: parsed.detectedLang,
+      phonetic: parsed.phonetic,
+    };
+  } catch {
+    return { translatedText: raw };
   }
-  return { translatedText: raw };
 }
 
 /** Convert raw PCM to WAV by prepending a valid WAV header (no ffmpeg needed) */

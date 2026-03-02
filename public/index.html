@@ -63,6 +63,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   font-size:15px;line-height:1.5;min-height:40px;white-space:pre-wrap;word-break:break-word;
 }
 .output-text.empty{color:#555;font-style:italic}
+.phonetic{font-size:14px;color:var(--accent);font-style:italic;line-height:1.5;white-space:pre-wrap;word-break:break-word}
 
 /* Controls row */
 .controls{display:flex;gap:8px;flex-wrap:wrap}
@@ -161,6 +162,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   <div class="panel">
     <div class="panel-label">Translation</div>
     <div class="output-text empty" id="outputText">Translation will appear here</div>
+    <div class="phonetic" id="phoneticText" style="display:none"></div>
     <div class="controls">
       <button class="btn small" id="playBtn" disabled>&#128266; Play</button>
       <button class="btn small danger" id="stopAudioBtn" style="display:none">&#9632; Stop</button>
@@ -446,9 +448,18 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   });
 
   // -- Helpers --
+  const phoneticText = $("#phoneticText");
+
   function showResult(data) {
     outputText.textContent = data.translatedText || "";
     outputText.classList.toggle("empty", !data.translatedText);
+
+    if (data.phonetic) {
+      phoneticText.textContent = "Phonetically: " + data.phonetic;
+      phoneticText.style.display = "";
+    } else {
+      phoneticText.style.display = "none";
+    }
 
     lastAudioBase64 = data.audioBase64 || null;
     playBtn.disabled = !lastAudioBase64;
@@ -462,6 +473,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   function showError(msg) {
     outputText.textContent = "Error: " + msg;
     outputText.classList.remove("empty");
+    phoneticText.style.display = "none";
     lastAudioBase64 = null;
     playBtn.disabled = true;
     copyBtn.disabled = true;
@@ -503,6 +515,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     sourceText.value = "";
     outputText.textContent = "Translation will appear here";
     outputText.classList.add("empty");
+    phoneticText.style.display = "none";
     lastAudioBase64 = null;
     playBtn.disabled = true;
     copyBtn.disabled = true;

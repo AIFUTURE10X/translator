@@ -60,6 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       data: {
         originalText: extractedText,
         translatedText: result.translatedText,
+        phonetic: result.phonetic,
         detectedLang: result.detectedLang,
         audioBase64,
       },
