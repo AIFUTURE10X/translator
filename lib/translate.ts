@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || "";
-const TRANSLATE_MODEL = process.env.TRANSLATE_MODEL || "meta-llama/llama-4-maverick-17b-128e-instruct";
+const TRANSLATE_MODEL = process.env.TRANSLATE_MODEL || "llama-3.3-70b-versatile";
 const TTS_MODEL = process.env.TRANSLATE_TTS_MODEL || "gemini-2.5-flash-preview-tts";
 const TTS_VOICE = process.env.TRANSLATE_TTS_VOICE || "Kore";
 const VISION_MODEL = process.env.TRANSLATE_VISION_MODEL || "gemini-2.5-flash";
