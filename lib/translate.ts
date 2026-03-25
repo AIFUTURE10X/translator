@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || "";
-const TRANSLATE_MODEL = process.env.TRANSLATE_MODEL || "llama-3.3-70b-versatile";
+const TRANSLATE_MODEL = process.env.TRANSLATE_MODEL || "gemini-2.5-flash";
 const TTS_MODEL = process.env.TRANSLATE_TTS_MODEL || "gemini-2.5-flash-preview-tts";
 const TTS_VOICE = process.env.TRANSLATE_TTS_VOICE || "Kore";
 const VISION_MODEL = process.env.TRANSLATE_VISION_MODEL || "gemini-2.5-flash";
@@ -36,13 +36,15 @@ export interface TranslateResult {
 
 const NON_LATIN_LANGS = new Set(["th", "ja", "ko", "zh", "ar", "hi", "ru"]);
 
-/** Translate text using Groq Llama */
+/** Translate text using Gemini */
 export async function translateText(
   text: string,
   sourceLang: string,
   targetLang: string
 ): Promise<TranslateResult> {
-  if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY not configured");
+  if (!GOOGLE_AI_API_KEY) throw new Error("GOOGLE_AI_API_KEY not configured");
+
+  const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
 
   const targetName = SUPPORTED_LANGUAGES.find((l) => l.code === targetLang)?.name || targetLang;
   const isAuto = sourceLang === "auto";
@@ -59,33 +61,20 @@ export async function translateText(
     ? `You are a professional translator. Translate the user's text into ${targetName}. Auto-detect the source language.${phoneticInstruction} Respond with ONLY a JSON object: {"translatedText": "...", "detectedLang": "<ISO 639-1 code>"${wantPhonetic ? ', "phonetic": "..."' : ""}}. No extra text.`
     : `You are a professional translator. Translate the user's text from ${sourceName} into ${targetName}.${phoneticInstruction} Respond with ONLY a JSON object: {"translatedText": "..."${wantPhonetic ? ', "phonetic": "..."' : ""}}. No extra text.`;
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${GROQ_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: TRANSLATE_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: text },
-      ],
+  const response = await ai.models.generateContent({
+    model: TRANSLATE_MODEL,
+    contents: [{ role: "user", parts: [{ text }] }],
+    config: {
+      systemInstruction: systemPrompt,
       temperature: 0.1,
-      max_tokens: 5000,
-    }),
+    },
   });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Translation failed (${response.status}): ${errText}`);
-  }
-
-  const data = (await response.json()) as { choices: { message: { content: string } }[] };
-  const raw = data.choices[0]?.message?.content?.trim() || "";
+  const raw = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
   try {
-    const parsed = JSON.parse(raw);
+    const cleaned = raw.replace(/^```json\s*/, "").replace(/```\s*$/, "").trim();
+    const parsed = JSON.parse(cleaned);
     return {
       translatedText: parsed.translatedText || raw,
       detectedLang: parsed.detectedLang,
