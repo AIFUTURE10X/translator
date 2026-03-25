@@ -1,12 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { checkAuth } from "../../lib/auth";
 import { translateText, synthesizeMultilingual } from "../../lib/translate";
 
 export const config = { api: { bodyParser: { sizeLimit: "1mb" } } };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") { res.status(405).json({ ok: false, error: "Method not allowed" }); return; }
-  if (!checkAuth(req, res)) return;
 
   try {
     const { text, sourceLang, targetLang, tts, voice } = req.body;

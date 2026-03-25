@@ -119,22 +119,6 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btn.danger{background:#c0392b;border-color:#c0392b;color:#fff}
 
-/* Auth modal */
-.modal{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;
-  align-items:center;justify-content:center;padding:20px;
-}
-.modal.active{display:flex}
-.modal-box{
-  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-  padding:24px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px;
-}
-.modal-box h2{font-size:18px;font-weight:600}
-.modal-box input{
-  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
-  background:var(--bg);color:var(--text);font-size:14px;outline:none;
-}
-.modal-box input:focus{border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -198,21 +182,11 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
 <div class="loading" id="loading"><div class="spinner"></div><button class="btn danger" id="stopBtn">Stop</button></div>
 
-<div class="modal active" id="authModal">
-  <div class="modal-box">
-    <h2>Enter PIN</h2>
-    <p style="font-size:13px;color:var(--muted)">Enter your PIN to access the translator.</p>
-    <input type="password" id="tokenInput" placeholder="PIN..." inputmode="numeric">
-    <button class="btn primary" id="tokenSave" style="align-self:flex-end">Connect</button>
-  </div>
-</div>
-
 <script>
 (function(){
   const $ = (s) => document.querySelector(s);
   const API_BASE = location.origin;
 
-  let token = localStorage.getItem("translator_token") || "";
   let mediaRecorder = null;
   let audioChunks = [];
   let isRecording = false;
@@ -221,29 +195,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   let currentAbort = null;
   let currentAudio = null;
 
-  // -- Auth --
-  const authModal = $("#authModal");
-  const tokenInput = $("#tokenInput");
-  const tokenSave = $("#tokenSave");
-
-  if (token) {
-    authModal.classList.remove("active");
-    loadLanguages();
-  } else {
-    tokenInput.focus();
-  }
-
-  tokenSave.addEventListener("click", () => {
-    const val = tokenInput.value.trim();
-    if (!val) return;
-    token = val;
-    localStorage.setItem("translator_token", val);
-    authModal.classList.remove("active");
-    loadLanguages();
-  });
-  tokenInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") tokenSave.click();
-  });
+  loadLanguages();
 
   // -- Auto-play toggle --
   const autoPlayToggle = $("#autoPlayToggle");
@@ -274,10 +226,6 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       targetLangEl.value = "th";
     } catch (err) {
       console.error("Failed to load languages:", err);
-      // Fallback: show token prompt again
-      token = "";
-      localStorage.removeItem("translator_token");
-      authModal.classList.add("active");
     }
   }
 
@@ -580,14 +528,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   async function apiFetch(path, opts = {}) {
     const controller = new AbortController();
     currentAbort = controller;
-    const headers = { Authorization: `Bearer ${token}`, ...(opts.headers || {}) };
-    const res = await fetch(API_BASE + path, { ...opts, headers, signal: controller.signal });
-    if (res.status === 401 || res.status === 403) {
-      token = "";
-      localStorage.removeItem("translator_token");
-      authModal.classList.add("active");
-      throw new Error("Authentication failed");
-    }
+    const res = await fetch(API_BASE + path, { ...opts, headers: opts.headers, signal: controller.signal });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || "Request failed");
     return json;
