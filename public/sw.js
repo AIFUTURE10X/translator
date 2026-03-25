@@ -1,4 +1,4 @@
-const CACHE_NAME = "translator-v3";
+const CACHE_NAME = "translator-v4";
 
 self.addEventListener("install", () => self.skipWaiting());
 
