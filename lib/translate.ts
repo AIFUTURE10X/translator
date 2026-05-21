@@ -1,5 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
-
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || "";
 const TRANSLATE_MODEL = process.env.TRANSLATE_MODEL || "gemini-2.5-flash";
@@ -34,7 +32,71 @@ export interface TranslateResult {
   phonetic?: string;
 }
 
+interface GeminiPart {
+  text?: string;
+  inlineData?: {
+    mimeType: string;
+    data: string;
+  };
+}
+
+interface GeminiContent {
+  role?: string;
+  parts: GeminiPart[];
+}
+
+interface GeminiGenerateResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: GeminiPart[];
+    };
+  }>;
+  error?: {
+    message?: string;
+  };
+}
+
 const NON_LATIN_LANGS = new Set(["th", "ja", "ko", "zh", "ar", "hi", "ru"]);
+
+async function generateGeminiContent(
+  model: string,
+  body: {
+    contents: GeminiContent[];
+    systemInstruction?: { parts: Array<{ text: string }> };
+    generationConfig?: Record<string, unknown>;
+  }
+): Promise<GeminiGenerateResponse> {
+  if (model.includes("..") || model.includes("?") || model.includes("&")) {
+    throw new Error("Invalid Gemini model name");
+  }
+
+  const modelPath = model.startsWith("models/") || model.startsWith("tunedModels/")
+    ? model
+    : `models/${model}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${encodeURIComponent(GOOGLE_AI_API_KEY)}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const responseText = await response.text();
+  let data: GeminiGenerateResponse = {};
+  if (responseText) {
+    try {
+      data = JSON.parse(responseText) as GeminiGenerateResponse;
+    } catch {
+      throw new Error(`Gemini returned invalid JSON (${response.status})`);
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(`Gemini request failed (${response.status}): ${data.error?.message || response.statusText}`);
+  }
+
+  return data;
+}
 
 /** Translate text using Gemini */
 export async function translateText(
@@ -43,8 +105,6 @@ export async function translateText(
   targetLang: string
 ): Promise<TranslateResult> {
   if (!GOOGLE_AI_API_KEY) throw new Error("GOOGLE_AI_API_KEY not configured");
-
-  const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
 
   const targetName = SUPPORTED_LANGUAGES.find((l) => l.code === targetLang)?.name || targetLang;
   const isAuto = sourceLang === "auto";
@@ -61,11 +121,10 @@ export async function translateText(
     ? `You are a professional translator. Translate the user's text into ${targetName}. Auto-detect the source language.${phoneticInstruction} Respond with ONLY a JSON object: {"translatedText": "...", "detectedLang": "<ISO 639-1 code>"${wantPhonetic ? ', "phonetic": "..."' : ""}}. No extra text.`
     : `You are a professional translator. Translate the user's text from ${sourceName} into ${targetName}.${phoneticInstruction} Respond with ONLY a JSON object: {"translatedText": "..."${wantPhonetic ? ', "phonetic": "..."' : ""}}. No extra text.`;
 
-  const response = await ai.models.generateContent({
-    model: TRANSLATE_MODEL,
+  const response = await generateGeminiContent(TRANSLATE_MODEL, {
     contents: [{ role: "user", parts: [{ text }] }],
-    config: {
-      systemInstruction: systemPrompt,
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    generationConfig: {
       temperature: 0.1,
     },
   });
@@ -109,13 +168,11 @@ function pcmToWav(pcmBuffer: Buffer, sampleRate = 24000, channels = 1, bitDepth 
 export async function synthesizeMultilingual(text: string, voice?: string): Promise<string> {
   if (!GOOGLE_AI_API_KEY) throw new Error("GOOGLE_AI_API_KEY not configured");
 
-  const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
   const voiceName = voice || TTS_VOICE;
 
-  const response = await ai.models.generateContent({
-    model: TTS_MODEL,
+  const response = await generateGeminiContent(TTS_MODEL, {
     contents: [{ role: "user", parts: [{ text: `Read the following text aloud exactly as written:\n\n${text}` }] }],
-    config: {
+    generationConfig: {
       responseModalities: ["AUDIO"],
       speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
     },
@@ -174,10 +231,7 @@ export async function transcribeAudio(audioBuffer: Buffer, filename = "audio.web
 export async function extractTextFromImage(imageBuffer: Buffer, mimeType: string): Promise<string> {
   if (!GOOGLE_AI_API_KEY) throw new Error("GOOGLE_AI_API_KEY not configured");
 
-  const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
-
-  const response = await ai.models.generateContent({
-    model: VISION_MODEL,
+  const response = await generateGeminiContent(VISION_MODEL, {
     contents: [{
       role: "user",
       parts: [
@@ -196,10 +250,7 @@ export async function extractTextFromImage(imageBuffer: Buffer, mimeType: string
 export async function describeImage(imageBuffer: Buffer, mimeType: string): Promise<string> {
   if (!GOOGLE_AI_API_KEY) throw new Error("GOOGLE_AI_API_KEY not configured");
 
-  const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
-
-  const response = await ai.models.generateContent({
-    model: VISION_MODEL,
+  const response = await generateGeminiContent(VISION_MODEL, {
     contents: [{
       role: "user",
       parts: [

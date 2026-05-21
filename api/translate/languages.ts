@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "../../lib/vercel";
 import { SUPPORTED_LANGUAGES } from "../../lib/translate";
 
 export default function handler(req: VercelRequest, res: VercelResponse) {

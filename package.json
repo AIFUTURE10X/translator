@@ -3,15 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vercel dev"
-  },
-  "dependencies": {
-    "@google/genai": "^1.43.0",
-    "@vercel/node": "^5.6.9"
+    "dev": "npx --yes vercel@54.2.0 dev"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.0",
-    "vercel": "^41.0.0"
+    "typescript": "^5.7.0"
   }
 }

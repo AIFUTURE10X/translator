@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "../../lib/vercel";
 import { translateText, synthesizeMultilingual } from "../../lib/translate";
 
 export const config = { api: { bodyParser: { sizeLimit: "1mb" } } };

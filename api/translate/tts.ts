@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "../../lib/vercel";
 import { synthesizeMultilingual } from "../../lib/translate";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
