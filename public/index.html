@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Thai Learning">
-<link rel="manifest" href="/manifest.json">
-<link rel="icon" href="/icon-192.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/icon-192.svg">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.svg">
 <title>AI Crew Pilot · Thai Learning</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -305,13 +305,34 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
 <div class="loading" id="loading"><div class="spinner"></div><button class="btn danger" id="stopBtn">Stop</button></div>
 
-<script src="/learning.js"></script>
+<script src="learning.js"></script>
 <script>
 (function(){
   const $ = (s) => document.querySelector(s);
-  const API_BASE = location.origin;
+  const IS_FILE_MODE = location.protocol === "file:";
+  const API_BASE = IS_FILE_MODE ? "" : location.origin;
   const Learning = window.ThaiLearning;
   const LEARNING_STORAGE_KEY = "thai_learning_cards_v1";
+  const FALLBACK_LANGUAGES = [
+    { code: "auto", name: "Auto-detect" },
+    { code: "en", name: "English" },
+    { code: "th", name: "Thai" },
+    { code: "es", name: "Spanish" },
+    { code: "fr", name: "French" },
+    { code: "de", name: "German" },
+    { code: "it", name: "Italian" },
+    { code: "pt", name: "Portuguese" },
+    { code: "ja", name: "Japanese" },
+    { code: "ko", name: "Korean" },
+    { code: "zh", name: "Chinese" },
+    { code: "ar", name: "Arabic" },
+    { code: "hi", name: "Hindi" },
+    { code: "ru", name: "Russian" },
+    { code: "vi", name: "Vietnamese" },
+    { code: "id", name: "Indonesian" },
+    { code: "ms", name: "Malay" },
+    { code: "fil", name: "Filipino" },
+  ];
 
   let mediaRecorder = null;
   let audioChunks = [];
@@ -324,8 +345,6 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   let currentReviewCard = null;
   let lastTranslationData = null;
   let selectedCategory = "All";
-
-  loadLanguages();
 
   // -- Auto-play toggle --
   const autoPlayToggle = $("#autoPlayToggle");
@@ -355,24 +374,33 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   // -- Languages --
   const sourceLangEl = $("#sourceLang");
   const targetLangEl = $("#targetLang");
+  loadLanguages();
 
   async function loadLanguages() {
     try {
+      if (IS_FILE_MODE) {
+        renderLanguages(FALLBACK_LANGUAGES);
+        return;
+      }
       const res = await apiFetch("/api/translate/languages");
-      const langs = res.data.languages;
-      sourceLangEl.innerHTML = langs.map(
-        (l) => `<option value="${l.code}">${l.name}</option>`
-      ).join("");
-      // Target: no auto-detect
-      targetLangEl.innerHTML = langs.filter((l) => l.code !== "auto").map(
-        (l) => `<option value="${l.code}">${l.name}</option>`
-      ).join("");
-      // Defaults: auto-detect source, Thai target
-      sourceLangEl.value = "auto";
-      targetLangEl.value = "th";
+      renderLanguages(res.data.languages);
     } catch (err) {
       console.error("Failed to load languages:", err);
+      renderLanguages(FALLBACK_LANGUAGES);
     }
+  }
+
+  function renderLanguages(langs) {
+    sourceLangEl.innerHTML = langs.map(
+      (l) => `<option value="${l.code}">${l.name}</option>`
+    ).join("");
+    // Target: no auto-detect
+    targetLangEl.innerHTML = langs.filter((l) => l.code !== "auto").map(
+      (l) => `<option value="${l.code}">${l.name}</option>`
+    ).join("");
+    // Defaults: auto-detect source, Thai target
+    sourceLangEl.value = "auto";
+    targetLangEl.value = "th";
   }
 
   // -- Swap --
@@ -1053,6 +1081,9 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   });
 
   async function apiFetch(path, opts = {}) {
+    if (IS_FILE_MODE) {
+      throw new Error("Translation needs the app opened from a local server or the deployed site, not file://.");
+    }
     const controller = new AbortController();
     currentAbort = controller;
     const res = await fetch(API_BASE + path, { ...opts, headers: opts.headers, signal: controller.signal });
@@ -1062,8 +1093,8 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   }
 })();
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js").catch(() => {});
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 </script>
 </body>
