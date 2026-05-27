@@ -130,11 +130,25 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 .saved-card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .saved-card-actions{display:flex;gap:8px;flex-wrap:wrap}
 .starter-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.category-bar{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
-.category-bar::-webkit-scrollbar{display:none}
+.category-dropdown{
+  background:var(--card);border:1px solid var(--border);border-radius:8px;
+  padding:8px;display:flex;flex-direction:column;gap:8px;
+}
+.category-toggle{
+  list-style:none;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
+  color:var(--muted);cursor:pointer;font-size:13px;font-weight:700;
+}
+.category-toggle::-webkit-details-marker{display:none}
+.category-toggle strong{color:#fff;font-size:14px;justify-self:start}
+.category-caret{color:var(--accent);font-size:15px;transition:transform .15s}
+.category-dropdown[open] .category-caret{transform:rotate(180deg)}
+.category-bar{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+  gap:8px;max-height:240px;overflow:auto;padding-top:2px;
+}
 .category-btn{
-  flex:0 0 auto;border:1px solid var(--border);border-radius:999px;background:#141414;color:var(--muted);
-  padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;
+  width:100%;min-height:40px;border:1px solid var(--border);border-radius:8px;background:#141414;color:var(--muted);
+  padding:8px 10px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;
 }
 .category-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .learn-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
@@ -263,7 +277,14 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       </div>
     </div>
 
-    <div class="category-bar" id="categoryBar" aria-label="Learn categories"></div>
+    <details class="category-dropdown" id="categoryDropdown" open>
+      <summary class="category-toggle">
+        <span>Category</span>
+        <strong id="categoryCurrent">All</strong>
+        <span class="category-caret" aria-hidden="true">&#9662;</span>
+      </summary>
+      <div class="category-bar" id="categoryBar" aria-label="Learn categories"></div>
+    </details>
 
     <div class="panel">
       <div class="panel-label">Daily Review</div>
@@ -451,6 +472,8 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   const resetLearnBtn = $("#resetLearnBtn");
   const packList = $("#packList");
   const learnStopAudioBtn = $("#learnStopAudioBtn");
+  const categoryDropdown = $("#categoryDropdown");
+  const categoryCurrent = $("#categoryCurrent");
 
   initTabs();
   renderLearning();
@@ -777,6 +800,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
   function renderCategories() {
     categoryBar.textContent = "";
+    categoryCurrent.textContent = selectedCategory;
     Learning.getAvailableCategories(learningCards).forEach((category) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -786,6 +810,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       button.addEventListener("click", () => {
         selectedCategory = category;
         currentReviewCard = null;
+        categoryDropdown.open = false;
         renderLearning();
       });
       categoryBar.appendChild(button);
@@ -828,7 +853,9 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     if (!learningCards.length) {
       const empty = document.createElement("div");
       empty.className = "empty-state";
-      empty.textContent = "Add the starter pack or save phrases from the translator.";
+      empty.textContent = selectedCategory === "All"
+        ? "Add the starter pack or save phrases from the translator."
+        : `No ${selectedCategory} cards yet.`;
       savedCards.appendChild(empty);
       return;
     }
