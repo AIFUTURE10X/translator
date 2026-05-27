@@ -259,6 +259,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       </div>
       <div class="learn-actions">
         <button class="btn small danger" id="resetLearnBtn" type="button">Reset Learn</button>
+        <button class="btn small danger" id="learnStopAudioBtn" type="button" style="display:none">&#9632; Stop Audio</button>
       </div>
     </div>
 
@@ -310,7 +311,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 (function(){
   const $ = (s) => document.querySelector(s);
   const IS_FILE_MODE = location.protocol === "file:";
-  const API_BASE = IS_FILE_MODE ? "" : location.origin;
+  const API_BASE = IS_FILE_MODE ? "http://127.0.0.1:8787" : location.origin;
   const Learning = window.ThaiLearning;
   const LEARNING_STORAGE_KEY = "thai_learning_cards_v1";
   const FALLBACK_LANGUAGES = [
@@ -341,6 +342,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   let lastAudioBase64 = null;
   let currentAbort = null;
   let currentAudio = null;
+  let currentSpeech = null;
   let learningCards = loadLearningCards();
   let currentReviewCard = null;
   let lastTranslationData = null;
@@ -448,6 +450,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   const categoryBar = $("#categoryBar");
   const resetLearnBtn = $("#resetLearnBtn");
   const packList = $("#packList");
+  const learnStopAudioBtn = $("#learnStopAudioBtn");
 
   initTabs();
   renderLearning();
@@ -757,7 +760,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   }
 
   function renderLearning() {
-    if (!Learning.getCategories(learningCards).includes(selectedCategory)) selectedCategory = "All";
+    if (!Learning.getAvailableCategories(learningCards).includes(selectedCategory)) selectedCategory = "All";
     const stats = Learning.getStats(learningCards, undefined, selectedCategory);
     statTotal.textContent = String(stats.total);
     statDue.textContent = String(stats.due);
@@ -774,7 +777,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
   function renderCategories() {
     categoryBar.textContent = "";
-    Learning.getCategories(learningCards).forEach((category) => {
+    Learning.getAvailableCategories(learningCards).forEach((category) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "category-btn";
@@ -966,6 +969,8 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       return;
     }
 
+    if (IS_FILE_MODE && playBrowserSpeech(card.thaiText)) return;
+
     const originalText = button.textContent;
     button.disabled = true;
     button.textContent = "\u23F3 ...";
@@ -982,6 +987,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       if (currentReviewCard?.id === cardId && card) currentReviewCard = card;
       if (card?.audioBase64) playAudio(card.audioBase64);
     } catch (err) {
+      if (playBrowserSpeech(card.thaiText)) return;
       alert("Could not create audio for this card. " + err.message);
     } finally {
       button.disabled = false;
@@ -1007,7 +1013,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     const translated = outputText.textContent;
     if (translated && !outputText.classList.contains("empty")) {
       if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-      stopAudioBtn.style.display = "none";
+      setAudioStopVisible(false);
       playBtn.disabled = true;
       playBtn.textContent = "\u23F3 ...";
       try {
@@ -1035,19 +1041,65 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
   function playAudio(base64) {
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    if (currentSpeech && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      currentSpeech = null;
+    }
     const audio = new Audio("data:audio/wav;base64," + base64);
     audio.playbackRate = parseFloat(speedSelect.value);
     currentAudio = audio;
-    stopAudioBtn.style.display = "";
+    setAudioStopVisible(true);
     audio.play().catch((e) => console.warn("Audio play failed:", e));
-    audio.addEventListener("ended", () => { stopAudioBtn.style.display = "none"; currentAudio = null; });
-    audio.addEventListener("pause", () => { stopAudioBtn.style.display = "none"; });
+    audio.addEventListener("ended", () => { setAudioStopVisible(false); currentAudio = null; });
+    audio.addEventListener("pause", () => { setAudioStopVisible(false); });
   }
 
-  stopAudioBtn.addEventListener("click", () => {
+  function playBrowserSpeech(text) {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return false;
+    if (!text) return false;
+
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-    stopAudioBtn.style.display = "none";
-  });
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "th-TH";
+    utterance.rate = parseFloat(speedSelect.value) || 1;
+    utterance.pitch = voiceSelect.value === "Puck" ? 0.85 : 1.05;
+    const thaiVoice = window.speechSynthesis.getVoices().find((voice) => {
+      return voice.lang && voice.lang.toLowerCase().startsWith("th");
+    });
+    if (thaiVoice) utterance.voice = thaiVoice;
+
+    currentSpeech = utterance;
+    setAudioStopVisible(true);
+    utterance.onend = () => {
+      if (currentSpeech === utterance) currentSpeech = null;
+      setAudioStopVisible(false);
+    };
+    utterance.onerror = () => {
+      if (currentSpeech === utterance) currentSpeech = null;
+      setAudioStopVisible(false);
+    };
+    window.speechSynthesis.speak(utterance);
+    return true;
+  }
+
+  function setAudioStopVisible(on) {
+    stopAudioBtn.style.display = on ? "" : "none";
+    learnStopAudioBtn.style.display = on ? "" : "none";
+  }
+
+  function stopPlayback() {
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    if (currentSpeech && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      currentSpeech = null;
+    }
+    setAudioStopVisible(false);
+  }
+
+  stopAudioBtn.addEventListener("click", stopPlayback);
+  learnStopAudioBtn.addEventListener("click", stopPlayback);
 
   function showLoading(on) {
     $("#loading").classList.toggle("active", on);
@@ -1081,12 +1133,17 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   });
 
   async function apiFetch(path, opts = {}) {
-    if (IS_FILE_MODE) {
-      throw new Error("Translation needs the app opened from a local server or the deployed site, not file://.");
-    }
     const controller = new AbortController();
     currentAbort = controller;
-    const res = await fetch(API_BASE + path, { ...opts, headers: opts.headers, signal: controller.signal });
+    let res;
+    try {
+      res = await fetch(API_BASE + path, { ...opts, headers: opts.headers, signal: controller.signal });
+    } catch (err) {
+      if (IS_FILE_MODE) {
+        throw new Error("Local translation server is not running. Start it with npm run local, then refresh this page.");
+      }
+      throw err;
+    }
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || "Request failed");
     return json;

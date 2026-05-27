@@ -144,6 +144,18 @@ test("adds the next pack as fifteen more due cards", () => {
   assert.ok(result.cards.some((card) => card.meaningText === "Please speak slowly"));
 });
 
+test("restores expanded card packs in fifteen-card batches", () => {
+  const nonStarterPacks = Learning.PACKS.filter((pack) => pack.id !== "survival-thai");
+  const totalCards = Learning.PACKS.reduce((sum, pack) => sum + pack.cards.length, 0);
+
+  assert.ok(totalCards >= 100);
+  assert.ok(nonStarterPacks.length >= 6);
+  assert.ok(nonStarterPacks.every((pack) => pack.cards.length === 15));
+  assert.ok(Learning.PACKS.some((pack) => pack.id === "food-drinks-1"));
+  assert.ok(Learning.PACKS.some((pack) => pack.id === "transport-taxi-1"));
+  assert.ok(Learning.PACKS.some((pack) => pack.id === "health-emergency-1"));
+});
+
 test("does not duplicate starter pack cards", () => {
   const now = Date.UTC(2026, 4, 27, 9, 0, 0);
   const first = Learning.addStarterPack([], now);
@@ -199,6 +211,20 @@ test("gets available categories with All first", () => {
   ]);
 
   assert.deepEqual(categories, ["All", "Favorites", "Basics", "Food", "Saved", "Travel"]);
+});
+
+test("keeps pack categories available before cards are added", () => {
+  const categories = Learning.getAvailableCategories([]);
+
+  assert.equal(categories[0], "All");
+  assert.ok(categories.includes("Basics"));
+  assert.ok(categories.includes("Food"));
+  assert.ok(categories.includes("Health"));
+  assert.ok(categories.includes("Hotel"));
+  assert.ok(categories.includes("Shopping"));
+  assert.ok(categories.includes("Social"));
+  assert.ok(categories.includes("Time"));
+  assert.ok(categories.includes("Transport"));
 });
 
 test("filters cards and due cards by category", () => {

@@ -54,6 +54,138 @@
         { thaiText: "ต้องการหมอ", meaningText: "I need a doctor", phonetic: "dtong gaan mor", tag: "Emergency" },
       ],
     },
+    {
+      id: "food-drinks-1",
+      name: "Food and Drinks 1",
+      description: "Restaurant, cafe, and street-food phrases.",
+      cards: [
+        { thaiText: "ขอเมนู", meaningText: "Can I have the menu?", phonetic: "khor meh-nuu", tag: "Food" },
+        { thaiText: "เอาเผ็ดน้อย", meaningText: "Make it a little spicy", phonetic: "ao phet noi", tag: "Food" },
+        { thaiText: "ไม่ใส่น้ำแข็ง", meaningText: "No ice", phonetic: "mai sai naam khaeng", tag: "Food" },
+        { thaiText: "หวานน้อย", meaningText: "Less sweet", phonetic: "waan noi", tag: "Food" },
+        { thaiText: "เอากลับบ้าน", meaningText: "Takeaway / to go", phonetic: "ao glap baan", tag: "Food" },
+        { thaiText: "กินที่นี่", meaningText: "Eat here", phonetic: "gin tee nee", tag: "Food" },
+        { thaiText: "ขอช้อนส้อม", meaningText: "Can I have a spoon and fork?", phonetic: "khor chon som", tag: "Food" },
+        { thaiText: "มีอาหารเจไหม", meaningText: "Do you have vegetarian food?", phonetic: "mee aa-haan jay mai", tag: "Food" },
+        { thaiText: "ไม่กินหมู", meaningText: "I do not eat pork", phonetic: "mai gin muu", tag: "Food" },
+        { thaiText: "ไม่ใส่ผงชูรส", meaningText: "No MSG", phonetic: "mai sai phong chuu rot", tag: "Food" },
+        { thaiText: "ข้าวผัด", meaningText: "Fried rice", phonetic: "khao phat", tag: "Food" },
+        { thaiText: "ผัดไทย", meaningText: "Pad Thai", phonetic: "phat thai", tag: "Food" },
+        { thaiText: "ต้มยำกุ้ง", meaningText: "Tom yum soup with shrimp", phonetic: "dtom yam goong", tag: "Food" },
+        { thaiText: "อร่อยไหม", meaningText: "Is it tasty?", phonetic: "a-roi mai", tag: "Food" },
+        { thaiText: "ขออีกหนึ่ง", meaningText: "One more, please", phonetic: "khor eek neung", tag: "Food" },
+      ],
+    },
+    {
+      id: "transport-taxi-1",
+      name: "Transport and Taxi 1",
+      description: "Taxi, airport, traffic, and getting around.",
+      cards: [
+        { thaiText: "ไปสนามบิน", meaningText: "Go to the airport", phonetic: "bpai sa-naam bin", tag: "Transport" },
+        { thaiText: "ไปโรงแรมนี้", meaningText: "Go to this hotel", phonetic: "bpai rong-raem nee", tag: "Transport" },
+        { thaiText: "เปิดมิเตอร์ด้วย", meaningText: "Please use the meter", phonetic: "bpert mee-dter duay", tag: "Transport" },
+        { thaiText: "ค่าโดยสารเท่าไหร่", meaningText: "How much is the fare?", phonetic: "khaa doi-saan tao-rai", tag: "Transport" },
+        { thaiText: "อีกไกลไหม", meaningText: "Is it much farther?", phonetic: "eek glai mai", tag: "Transport" },
+        { thaiText: "ใช้เวลานานไหม", meaningText: "Will it take long?", phonetic: "chai weh-laa naan mai", tag: "Transport" },
+        { thaiText: "รถติด", meaningText: "Traffic jam", phonetic: "rot dtit", tag: "Transport" },
+        { thaiText: "รอแป๊บ", meaningText: "Wait a moment", phonetic: "ror bpaep", tag: "Transport" },
+        { thaiText: "ลงตรงนี้", meaningText: "I will get out here", phonetic: "long dtrong nee", tag: "Transport" },
+        { thaiText: "กลับรถได้ไหม", meaningText: "Can you turn around?", phonetic: "glap rot dai mai", tag: "Transport" },
+        { thaiText: "สถานีรถไฟอยู่ที่ไหน", meaningText: "Where is the train station?", phonetic: "sa-thaa-nee rot-fai yoo tee nai", tag: "Transport" },
+        { thaiText: "ป้ายรถเมล์อยู่ที่ไหน", meaningText: "Where is the bus stop?", phonetic: "bpaai rot-may yoo tee nai", tag: "Transport" },
+        { thaiText: "ใกล้ไหม", meaningText: "Is it nearby?", phonetic: "glai mai", tag: "Transport" },
+        { thaiText: "ไกลมากไหม", meaningText: "Is it very far?", phonetic: "glai maak mai", tag: "Transport" },
+        { thaiText: "ถึงแล้ว", meaningText: "We have arrived", phonetic: "theung laew", tag: "Transport" },
+      ],
+    },
+    {
+      id: "hotel-stay-1",
+      name: "Hotel Stay 1",
+      description: "Checking in, room problems, and hotel requests.",
+      cards: [
+        { thaiText: "เช็คอินได้ไหม", meaningText: "Can I check in?", phonetic: "chek in dai mai", tag: "Hotel" },
+        { thaiText: "เช็คเอาท์กี่โมง", meaningText: "What time is checkout?", phonetic: "chek ao gee mong", tag: "Hotel" },
+        { thaiText: "จองไว้แล้ว", meaningText: "I already have a booking", phonetic: "jong wai laew", tag: "Hotel" },
+        { thaiText: "มีห้องว่างไหม", meaningText: "Do you have a room available?", phonetic: "mee hong waang mai", tag: "Hotel" },
+        { thaiText: "รหัสไวไฟคืออะไร", meaningText: "What is the Wi-Fi password?", phonetic: "ra-hat wai-fai kheu a-rai", tag: "Hotel" },
+        { thaiText: "แอร์ไม่เย็น", meaningText: "The air conditioner is not cold", phonetic: "air mai yen", tag: "Hotel" },
+        { thaiText: "น้ำไม่ไหล", meaningText: "The water is not running", phonetic: "naam mai lai", tag: "Hotel" },
+        { thaiText: "ห้องเสียงดัง", meaningText: "The room is noisy", phonetic: "hong siang dang", tag: "Hotel" },
+        { thaiText: "ขอผ้าเช็ดตัวเพิ่ม", meaningText: "Can I have more towels?", phonetic: "khor phaa chet dtua perm", tag: "Hotel" },
+        { thaiText: "ทำความสะอาดห้อง", meaningText: "Please clean the room", phonetic: "tham khwaam sa-aat hong", tag: "Hotel" },
+        { thaiText: "ฝากกระเป๋าได้ไหม", meaningText: "Can I leave my bags?", phonetic: "faak gra-bpao dai mai", tag: "Hotel" },
+        { thaiText: "ปลุกตอนเจ็ดโมง", meaningText: "Wake me at seven", phonetic: "bpluk dton jet mong", tag: "Hotel" },
+        { thaiText: "ที่จอดรถอยู่ที่ไหน", meaningText: "Where is the parking?", phonetic: "tee jot rot yoo tee nai", tag: "Hotel" },
+        { thaiText: "ขอกุญแจอีกดอก", meaningText: "Can I have another key?", phonetic: "khor gun-jae eek dok", tag: "Hotel" },
+        { thaiText: "ขอเปลี่ยนห้อง", meaningText: "Can I change rooms?", phonetic: "khor bplian hong", tag: "Hotel" },
+      ],
+    },
+    {
+      id: "health-emergency-1",
+      name: "Health and Emergency 1",
+      description: "Health, safety, and urgent-help phrases.",
+      cards: [
+        { thaiText: "เจ็บตรงนี้", meaningText: "It hurts here", phonetic: "jep dtrong nee", tag: "Health" },
+        { thaiText: "ปวดหัว", meaningText: "I have a headache", phonetic: "bpuat hua", tag: "Health" },
+        { thaiText: "ปวดท้อง", meaningText: "I have a stomachache", phonetic: "bpuat tong", tag: "Health" },
+        { thaiText: "เป็นไข้", meaningText: "I have a fever", phonetic: "bpen khai", tag: "Health" },
+        { thaiText: "แพ้ยา", meaningText: "I am allergic to medicine", phonetic: "phae yaa", tag: "Health" },
+        { thaiText: "ต้องไปโรงพยาบาล", meaningText: "I need to go to the hospital", phonetic: "dtong bpai rong pha-yaa-baan", tag: "Health" },
+        { thaiText: "เรียกรถพยาบาล", meaningText: "Call an ambulance", phonetic: "riak rot pha-yaa-baan", tag: "Emergency" },
+        { thaiText: "ตำรวจ", meaningText: "Police", phonetic: "dtam-ruat", tag: "Emergency" },
+        { thaiText: "ช่วยโทรหาตำรวจ", meaningText: "Please call the police", phonetic: "chuay toh haa dtam-ruat", tag: "Emergency" },
+        { thaiText: "ของหาย", meaningText: "My things are missing", phonetic: "khong haai", tag: "Emergency" },
+        { thaiText: "กระเป๋าหาย", meaningText: "My bag is missing", phonetic: "gra-bpao haai", tag: "Emergency" },
+        { thaiText: "อันตราย", meaningText: "Dangerous", phonetic: "an-dta-raai", tag: "Emergency" },
+        { thaiText: "ไฟไหม้", meaningText: "Fire", phonetic: "fai mai", tag: "Emergency" },
+        { thaiText: "ฉันหลงทาง", meaningText: "I am lost", phonetic: "chan long thaang", tag: "Emergency" },
+        { thaiText: "ต้องการความช่วยเหลือ", meaningText: "I need help", phonetic: "dtong gaan khwaam chuay leua", tag: "Emergency" },
+      ],
+    },
+    {
+      id: "shopping-market-1",
+      name: "Shopping and Market 1",
+      description: "Markets, sizes, colors, payment, and receipts.",
+      cards: [
+        { thaiText: "มีไซซ์ใหญ่ไหม", meaningText: "Do you have a larger size?", phonetic: "mee sai yai mai", tag: "Shopping" },
+        { thaiText: "มีไซซ์เล็กไหม", meaningText: "Do you have a smaller size?", phonetic: "mee sai lek mai", tag: "Shopping" },
+        { thaiText: "มีสีอื่นไหม", meaningText: "Do you have another color?", phonetic: "mee sii eun mai", tag: "Shopping" },
+        { thaiText: "ลองได้ไหม", meaningText: "Can I try it?", phonetic: "long dai mai", tag: "Shopping" },
+        { thaiText: "จ่ายด้วยบัตรได้ไหม", meaningText: "Can I pay by card?", phonetic: "jaai duay bat dai mai", tag: "Shopping" },
+        { thaiText: "รับเงินสดไหม", meaningText: "Do you take cash?", phonetic: "rap ngoen sot mai", tag: "Shopping" },
+        { thaiText: "ถูกกว่านี้ได้ไหม", meaningText: "Can it be cheaper?", phonetic: "thuuk gwaa nee dai mai", tag: "Shopping" },
+        { thaiText: "ขอใบเสร็จ", meaningText: "Can I have a receipt?", phonetic: "khor bai set", tag: "Shopping" },
+        { thaiText: "เปิดกี่โมง", meaningText: "What time do you open?", phonetic: "bpert gee mong", tag: "Shopping" },
+        { thaiText: "ปิดกี่โมง", meaningText: "What time do you close?", phonetic: "bpit gee mong", tag: "Shopping" },
+        { thaiText: "อยู่ตรงไหน", meaningText: "Where is it?", phonetic: "yoo dtrong nai", tag: "Shopping" },
+        { thaiText: "ของแท้ไหม", meaningText: "Is it genuine?", phonetic: "khong thae mai", tag: "Shopping" },
+        { thaiText: "สองอันเท่าไหร่", meaningText: "How much for two?", phonetic: "song an tao-rai", tag: "Shopping" },
+        { thaiText: "เอาถุงด้วย", meaningText: "I need a bag", phonetic: "ao thoong duay", tag: "Shopping" },
+        { thaiText: "ไม่เอาถุง", meaningText: "No bag", phonetic: "mai ao thoong", tag: "Shopping" },
+      ],
+    },
+    {
+      id: "social-basics-1",
+      name: "Social Basics 1",
+      description: "Names, polite phrases, dates, and friendly conversation.",
+      cards: [
+        { thaiText: "คุณชื่ออะไร", meaningText: "What is your name?", phonetic: "khun cheu a-rai", tag: "Social" },
+        { thaiText: "ฉันชื่อฟิล", meaningText: "My name is Phil", phonetic: "chan cheu Phil", tag: "Social" },
+        { thaiText: "ยินดีที่ได้รู้จัก", meaningText: "Nice to meet you", phonetic: "yin-dee tee dai roo-jak", tag: "Social" },
+        { thaiText: "สบายดีไหม", meaningText: "How are you?", phonetic: "sa-baai dee mai", tag: "Social" },
+        { thaiText: "สบายดี", meaningText: "I am fine", phonetic: "sa-baai dee", tag: "Social" },
+        { thaiText: "ไม่เป็นไร", meaningText: "No problem / never mind", phonetic: "mai bpen rai", tag: "Basics" },
+        { thaiText: "กรุณา", meaningText: "Please", phonetic: "ga-ru-naa", tag: "Basics" },
+        { thaiText: "ขออีกครั้ง", meaningText: "One more time, please", phonetic: "khor eek khrang", tag: "Basics" },
+        { thaiText: "ชอบมาก", meaningText: "I like it a lot", phonetic: "chop maak", tag: "Social" },
+        { thaiText: "สวยมาก", meaningText: "Very beautiful", phonetic: "suay maak", tag: "Social" },
+        { thaiText: "ดีมาก", meaningText: "Very good", phonetic: "dee maak", tag: "Social" },
+        { thaiText: "วันนี้", meaningText: "Today", phonetic: "wan nee", tag: "Time" },
+        { thaiText: "พรุ่งนี้", meaningText: "Tomorrow", phonetic: "phrung nee", tag: "Time" },
+        { thaiText: "เมื่อวาน", meaningText: "Yesterday", phonetic: "meua waan", tag: "Time" },
+        { thaiText: "แล้วเจอกัน", meaningText: "See you later", phonetic: "laew jer gan", tag: "Social" },
+      ],
+    },
   ];
   const STARTER_PACK = PACKS[0].cards;
 
@@ -289,6 +421,15 @@
     return ["All"].concat(categories.has("Favorites") ? ["Favorites"] : [], sorted);
   }
 
+  function getAvailableCategories(cards) {
+    const categories = new Set(getCategories(cards));
+    PACKS.forEach((pack) => {
+      pack.cards.forEach((card) => categories.add(getCategory(card)));
+    });
+    const sorted = Array.from(categories).filter((category) => category !== "All" && category !== "Favorites").sort();
+    return ["All"].concat(categories.has("Favorites") ? ["Favorites"] : [], sorted);
+  }
+
   function filterCardsByCategory(cards, category) {
     const currentCards = Array.isArray(cards) ? cards : [];
     if (!category || category === "All") return currentCards.slice();
@@ -324,6 +465,7 @@
     getPhoneticLabel,
     getCategory,
     getCategories,
+    getAvailableCategories,
     filterCardsByCategory,
     getStats,
   };
