@@ -6,10 +6,11 @@
 <meta name="theme-color" content="#FF6B00">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Translator">
+<meta name="apple-mobile-web-app-title" content="Thai Learning">
 <link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon-192.svg">
-<title>AI Crew Pilot · Translator</title>
+<title>AI Crew Pilot · Thai Learning</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -32,6 +33,25 @@ header .logo{width:28px;height:28px;border-radius:6px;background:var(--accent);d
 header h1{font-size:16px;font-weight:600;color:var(--text)}
 header .dot{color:var(--muted);font-size:14px}
 header .sub{font-size:14px;color:var(--muted);font-weight:400}
+
+/* Views */
+.mode-tabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:6px;
+}
+.tab-btn{
+  border:none;border-radius:8px;background:transparent;color:var(--muted);
+  padding:10px 12px;font-size:14px;font-weight:600;cursor:pointer;
+}
+.tab-btn.active{background:var(--accent);color:#fff}
+.badge{
+  display:none;min-width:20px;margin-left:6px;padding:2px 6px;border-radius:999px;
+  background:#111;color:#fff;font-size:12px;line-height:1;
+}
+.badge.active{display:inline-flex;align-items:center;justify-content:center}
+.view{display:none;flex-direction:column;gap:12px}
+.view.active{display:flex}
 
 /* Language bar */
 .lang-bar{
@@ -84,6 +104,49 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 .btn.primary:active{background:#e05e00}
 .btn.recording{background:#c0392b;border-color:#c0392b;color:#fff;animation:pulse 1.2s infinite}
 .btn.small{padding:8px 12px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.save-status{min-height:18px;color:var(--muted);font-size:13px}
+
+/* Learning */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{
+  border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;
+  background:#141414;
+}
+.stat strong{display:block;color:#fff;font-size:20px;line-height:1.1}
+.stat span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;margin-top:4px}
+.empty-state{color:var(--muted);font-size:14px;line-height:1.5}
+.learn-card,.saved-card{
+  border:1px solid var(--border);border-radius:8px;background:#141414;padding:12px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.learn-tag{align-self:flex-start;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px;padding:3px 8px}
+.review-prompt{font-size:17px;line-height:1.5;color:#fff}
+.review-answer{border-top:1px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.thai-text{font-size:24px;line-height:1.35;color:#fff;word-break:break-word}
+.meaning-text{font-size:14px;line-height:1.45;color:var(--muted);word-break:break-word}
+.saved-phonetic{font-size:13px;color:var(--accent);font-style:italic;line-height:1.45;word-break:break-word}
+.cards-list{display:flex;flex-direction:column;gap:8px}
+.saved-card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.saved-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.starter-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.category-bar{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
+.category-bar::-webkit-scrollbar{display:none}
+.category-btn{
+  flex:0 0 auto;border:1px solid var(--border);border-radius:999px;background:#141414;color:var(--muted);
+  padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;
+}
+.category-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.learn-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pack-list{display:flex;flex-direction:column;gap:8px}
+.pack-row{
+  border:1px solid var(--border);border-radius:8px;background:#141414;padding:12px;
+  display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+}
+.pack-title{font-size:15px;font-weight:700;color:#fff}
+.pack-desc{font-size:13px;color:var(--muted);line-height:1.4;margin-top:2px}
+.pack-meta{font-size:12px;color:var(--accent);font-weight:600;margin-top:6px}
+.favorite-mark{color:var(--accent);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
 
 @keyframes pulse{
   0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.5)}
@@ -128,9 +191,15 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     <div class="logo">A</div>
     <h1>AI Crew Pilot</h1>
     <span class="dot">·</span>
-    <span class="sub">Translator</span>
+    <span class="sub">Thai Learning</span>
   </header>
 
+  <nav class="mode-tabs" aria-label="App mode">
+    <button class="tab-btn active" id="translateTab" type="button">Translate</button>
+    <button class="tab-btn" id="learnTab" type="button">Learn <span class="badge" id="dueBadge"></span></button>
+  </nav>
+
+  <section class="view active" id="translateView">
   <div class="lang-bar">
     <select id="sourceLang"></select>
     <button class="swap-btn" id="swapBtn" title="Swap languages">&#8652;</button>
@@ -168,13 +237,67 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
         <option value="Puck">Male</option>
       </select>
       <button class="btn small" id="copyBtn" disabled>&#128203; Copy</button>
+      <button class="btn small" id="saveCardBtn" disabled>+ Save to Learn</button>
+      <button class="btn small" id="favoriteCardBtn" disabled>Save Favorite</button>
     </div>
+    <div class="save-status" id="saveStatus"></div>
   </div>
 
   <div class="settings">
-    <div class="toggle" id="autoPlayToggle"></div>
+    <div class="toggle" id="autoPlayToggle" role="switch" aria-checked="false" tabindex="0"></div>
     <label for="autoPlayToggle">Auto-play TTS</label>
   </div>
+  </section>
+
+  <section class="view" id="learnView">
+    <div class="panel">
+      <div class="stats-grid">
+        <div class="stat"><strong id="statTotal">0</strong><span>Total</span></div>
+        <div class="stat"><strong id="statDue">0</strong><span>Due</span></div>
+        <div class="stat"><strong id="statLearning">0</strong><span>Learning</span></div>
+        <div class="stat"><strong id="statMastered">0</strong><span>Mastered</span></div>
+      </div>
+      <div class="learn-actions">
+        <button class="btn small danger" id="resetLearnBtn" type="button">Reset Learn</button>
+      </div>
+    </div>
+
+    <div class="category-bar" id="categoryBar" aria-label="Learn categories"></div>
+
+    <div class="panel">
+      <div class="panel-label">Daily Review</div>
+      <div class="empty-state" id="reviewEmpty">No cards due.</div>
+      <div class="starter-actions" id="starterActions">
+        <button class="btn primary small" id="addStarterBtn" type="button">Add Survival Thai</button>
+      </div>
+      <div class="learn-card" id="reviewCard" style="display:none">
+        <div class="learn-tag" id="reviewTag"></div>
+        <div class="review-prompt" id="reviewMeaning"></div>
+        <button class="btn primary small" id="revealBtn" type="button">Show Thai</button>
+        <div class="review-answer" id="reviewAnswer" style="display:none">
+          <div class="thai-text" id="reviewThai"></div>
+          <div class="phonetic" id="reviewPhonetic"></div>
+          <div class="controls">
+            <button class="btn small" id="reviewPlayBtn" type="button">&#128266; Play</button>
+          </div>
+        </div>
+        <div class="controls" id="reviewControls" style="display:none">
+          <button class="btn small" id="forgotBtn" type="button">Forgot</button>
+          <button class="btn primary small" id="knowBtn" type="button">Know it</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">More Cards</div>
+      <div class="pack-list" id="packList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">Saved Phrases</div>
+      <div class="cards-list" id="savedCards"></div>
+    </div>
+  </section>
 </div>
 
 <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
@@ -182,10 +305,13 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
 <div class="loading" id="loading"><div class="spinner"></div><button class="btn danger" id="stopBtn">Stop</button></div>
 
+<script src="/learning.js"></script>
 <script>
 (function(){
   const $ = (s) => document.querySelector(s);
   const API_BASE = location.origin;
+  const Learning = window.ThaiLearning;
+  const LEARNING_STORAGE_KEY = "thai_learning_cards_v1";
 
   let mediaRecorder = null;
   let audioChunks = [];
@@ -194,16 +320,36 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   let lastAudioBase64 = null;
   let currentAbort = null;
   let currentAudio = null;
+  let learningCards = loadLearningCards();
+  let currentReviewCard = null;
+  let lastTranslationData = null;
+  let selectedCategory = "All";
 
   loadLanguages();
 
   // -- Auto-play toggle --
   const autoPlayToggle = $("#autoPlayToggle");
-  if (autoPlay) autoPlayToggle.classList.add("on");
-  autoPlayToggle.addEventListener("click", () => {
-    autoPlay = !autoPlay;
+  const autoPlayLabel = document.querySelector('label[for="autoPlayToggle"]');
+  function syncAutoPlayToggle() {
     autoPlayToggle.classList.toggle("on", autoPlay);
+    autoPlayToggle.setAttribute("aria-checked", String(autoPlay));
+  }
+  function toggleAutoPlay() {
+    autoPlay = !autoPlay;
+    syncAutoPlayToggle();
     localStorage.setItem("translator_autoplay", String(autoPlay));
+  }
+  syncAutoPlayToggle();
+  autoPlayToggle.addEventListener("click", toggleAutoPlay);
+  autoPlayToggle.addEventListener("keydown", (event) => {
+    if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      toggleAutoPlay();
+    }
+  });
+  autoPlayLabel.addEventListener("click", (event) => {
+    event.preventDefault();
+    toggleAutoPlay();
   });
 
   // -- Languages --
@@ -244,6 +390,39 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   const translateBtn = $("#translateBtn");
   const playBtn = $("#playBtn");
   const copyBtn = $("#copyBtn");
+  const saveCardBtn = $("#saveCardBtn");
+  const favoriteCardBtn = $("#favoriteCardBtn");
+  const saveStatus = $("#saveStatus");
+  const translateTab = $("#translateTab");
+  const learnTab = $("#learnTab");
+  const translateView = $("#translateView");
+  const learnView = $("#learnView");
+  const dueBadge = $("#dueBadge");
+  const statTotal = $("#statTotal");
+  const statDue = $("#statDue");
+  const statLearning = $("#statLearning");
+  const statMastered = $("#statMastered");
+  const reviewEmpty = $("#reviewEmpty");
+  const reviewCard = $("#reviewCard");
+  const reviewTag = $("#reviewTag");
+  const reviewMeaning = $("#reviewMeaning");
+  const revealBtn = $("#revealBtn");
+  const reviewAnswer = $("#reviewAnswer");
+  const reviewThai = $("#reviewThai");
+  const reviewPhonetic = $("#reviewPhonetic");
+  const reviewPlayBtn = $("#reviewPlayBtn");
+  const reviewControls = $("#reviewControls");
+  const forgotBtn = $("#forgotBtn");
+  const knowBtn = $("#knowBtn");
+  const savedCards = $("#savedCards");
+  const starterActions = $("#starterActions");
+  const addStarterBtn = $("#addStarterBtn");
+  const categoryBar = $("#categoryBar");
+  const resetLearnBtn = $("#resetLearnBtn");
+  const packList = $("#packList");
+
+  initTabs();
+  renderLearning();
 
   translateBtn.addEventListener("click", async () => {
     const text = sourceText.value.trim();
@@ -263,7 +442,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       });
       showResult(res.data);
     } catch (err) {
-      showError(err.message);
+      handleRequestError(err);
     } finally {
       showLoading(false);
     }
@@ -325,7 +504,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       }
       showResult(res.data);
     } catch (err) {
-      showError(err.message);
+      handleRequestError(err);
     } finally {
       showLoading(false);
     }
@@ -360,7 +539,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       }
       showResult(res.data);
     } catch (err) {
-      showError(err.message);
+      handleRequestError(err);
     } finally {
       showLoading(false);
     }
@@ -396,7 +575,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       }
       showResult(res.data);
     } catch (err) {
-      showError(err.message);
+      handleRequestError(err);
     } finally {
       showLoading(false);
     }
@@ -415,6 +594,20 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
       });
     }
   });
+  saveCardBtn.addEventListener("click", saveCurrentCard);
+  favoriteCardBtn.addEventListener("click", saveFavoriteCard);
+  revealBtn.addEventListener("click", () => {
+    reviewAnswer.style.display = "";
+    reviewControls.style.display = "";
+    revealBtn.style.display = "none";
+  });
+  reviewPlayBtn.addEventListener("click", () => {
+    if (currentReviewCard) playLearningCard(currentReviewCard.id, reviewPlayBtn);
+  });
+  forgotBtn.addEventListener("click", () => submitReview(false));
+  knowBtn.addEventListener("click", () => submitReview(true));
+  addStarterBtn.addEventListener("click", addStarterCards);
+  resetLearnBtn.addEventListener("click", resetLearning);
 
   // -- Helpers --
   const phoneticText = $("#phoneticText");
@@ -433,6 +626,22 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     lastAudioBase64 = data.audioBase64 || null;
     playBtn.disabled = !lastAudioBase64;
     copyBtn.disabled = !data.translatedText;
+    const effectiveSourceLang = sourceLangEl.value === "auto" && data.detectedLang
+      ? data.detectedLang
+      : sourceLangEl.value;
+    lastTranslationData = {
+      originalText: data.originalText || sourceText.value,
+      translatedText: data.translatedText || "",
+      phonetic: data.phonetic || "",
+      audioBase64: data.audioBase64 || "",
+      sourceLang: effectiveSourceLang,
+      targetLang: targetLangEl.value,
+    };
+    saveCardBtn.disabled = !Learning.createCardFromTranslation(lastTranslationData);
+    favoriteCardBtn.disabled = saveCardBtn.disabled;
+    saveCardBtn.textContent = "+ Save to Learn";
+    favoriteCardBtn.textContent = "Save Favorite";
+    setSaveStatus("");
 
     if (autoPlay && lastAudioBase64) {
       playAudio(lastAudioBase64);
@@ -446,6 +655,317 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     lastAudioBase64 = null;
     playBtn.disabled = true;
     copyBtn.disabled = true;
+    lastTranslationData = null;
+    saveCardBtn.disabled = true;
+    favoriteCardBtn.disabled = true;
+    saveCardBtn.textContent = "+ Save to Learn";
+    favoriteCardBtn.textContent = "Save Favorite";
+    setSaveStatus("");
+  }
+
+  function handleRequestError(err) {
+    if (err && (err.name === "AbortError" || String(err.message || err).toLowerCase().includes("aborted"))) return;
+    showError(err && err.message ? err.message : String(err));
+  }
+
+  function initTabs() {
+    translateTab.addEventListener("click", () => switchView("translate"));
+    learnTab.addEventListener("click", () => switchView("learn"));
+  }
+
+  function switchView(view) {
+    const isLearn = view === "learn";
+    translateTab.classList.toggle("active", !isLearn);
+    learnTab.classList.toggle("active", isLearn);
+    translateView.classList.toggle("active", !isLearn);
+    learnView.classList.toggle("active", isLearn);
+    if (isLearn) renderLearning();
+  }
+
+  function loadLearningCards() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LEARNING_STORAGE_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed.filter((card) => card && card.id && card.thaiText && card.meaningText) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveLearningCards() {
+    localStorage.setItem(LEARNING_STORAGE_KEY, JSON.stringify(learningCards));
+  }
+
+  function setSaveStatus(message) {
+    saveStatus.textContent = message || "";
+  }
+
+  function saveCurrentCard() {
+    saveTranslationCard(false);
+  }
+
+  function saveFavoriteCard() {
+    saveTranslationCard(true);
+  }
+
+  function saveTranslationCard(favorite) {
+    if (!lastTranslationData) return;
+    const candidate = Learning.createCardFromTranslation({ ...lastTranslationData, favorite });
+    if (!candidate) {
+      setSaveStatus("Thai must be the source or target language.");
+      return;
+    }
+
+    const result = Learning.upsertCard(learningCards, candidate);
+    learningCards = result.cards;
+    saveLearningCards();
+    renderLearning();
+    if (favorite) {
+      favoriteCardBtn.textContent = "Favorited";
+      setSaveStatus(result.added ? "Added to Favorites." : "Saved phrase marked as favorite.");
+    } else {
+      saveCardBtn.textContent = result.added ? "Saved" : "Updated";
+      setSaveStatus(result.added ? "Added to daily review." : "Saved phrase updated.");
+    }
+  }
+
+  function renderLearning() {
+    if (!Learning.getCategories(learningCards).includes(selectedCategory)) selectedCategory = "All";
+    const stats = Learning.getStats(learningCards, undefined, selectedCategory);
+    statTotal.textContent = String(stats.total);
+    statDue.textContent = String(stats.due);
+    statLearning.textContent = String(stats.learning);
+    statMastered.textContent = String(stats.mastered);
+    const allDue = Learning.getStats(learningCards).due;
+    dueBadge.textContent = allDue > 0 ? String(allDue) : "";
+    dueBadge.classList.toggle("active", allDue > 0);
+    renderCategories();
+    renderReview();
+    renderPacks();
+    renderSavedCards();
+  }
+
+  function renderCategories() {
+    categoryBar.textContent = "";
+    Learning.getCategories(learningCards).forEach((category) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "category-btn";
+      button.classList.toggle("active", category === selectedCategory);
+      button.textContent = category;
+      button.addEventListener("click", () => {
+        selectedCategory = category;
+        currentReviewCard = null;
+        renderLearning();
+      });
+      categoryBar.appendChild(button);
+    });
+  }
+
+  function renderReview() {
+    const dueCards = Learning.getDueCards(learningCards, undefined, selectedCategory);
+    if (!currentReviewCard || !dueCards.some((card) => card.id === currentReviewCard.id)) {
+      currentReviewCard = dueCards[0] || null;
+    }
+
+    if (!currentReviewCard) {
+      reviewCard.style.display = "none";
+      reviewEmpty.style.display = "";
+      starterActions.style.display = learningCards.length ? "none" : "";
+      reviewEmpty.textContent = learningCards.length
+        ? (selectedCategory === "All" ? "No cards due." : `No ${selectedCategory} cards due.`)
+        : "Start with survival phrases, then add your own from translations.";
+      return;
+    }
+
+    reviewEmpty.style.display = "none";
+    starterActions.style.display = "none";
+    reviewCard.style.display = "";
+    reviewTag.textContent = currentReviewCard.tag || "Saved";
+    reviewMeaning.textContent = currentReviewCard.meaningText;
+    reviewThai.textContent = currentReviewCard.thaiText;
+    const reviewPhoneticLabel = Learning.getPhoneticLabel(currentReviewCard);
+    reviewPhonetic.textContent = reviewPhoneticLabel;
+    reviewPhonetic.style.display = reviewPhoneticLabel ? "" : "none";
+    reviewAnswer.style.display = "none";
+    reviewControls.style.display = "none";
+    revealBtn.style.display = "";
+    reviewPlayBtn.disabled = false;
+  }
+
+  function renderSavedCards() {
+    savedCards.textContent = "";
+    if (!learningCards.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "Add the starter pack or save phrases from the translator.";
+      savedCards.appendChild(empty);
+      return;
+    }
+
+    const visibleCards = Learning.filterCardsByCategory(learningCards, selectedCategory);
+    if (!visibleCards.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = `No ${selectedCategory} cards yet.`;
+      savedCards.appendChild(empty);
+      return;
+    }
+
+    visibleCards.forEach((card) => {
+      const item = document.createElement("article");
+      item.className = "saved-card";
+
+      const head = document.createElement("div");
+      head.className = "saved-card-head";
+
+      const textWrap = document.createElement("div");
+      const thai = document.createElement("div");
+      thai.className = "thai-text";
+      thai.textContent = card.thaiText;
+      const meaning = document.createElement("div");
+      meaning.className = "meaning-text";
+      meaning.textContent = card.meaningText;
+      textWrap.append(thai, meaning);
+      const phoneticLabel = Learning.getPhoneticLabel(card);
+      if (phoneticLabel) {
+        const savedPhonetic = document.createElement("div");
+        savedPhonetic.className = "saved-phonetic";
+        savedPhonetic.textContent = phoneticLabel;
+        textWrap.appendChild(savedPhonetic);
+      }
+      if (card.favorite) {
+        const favorite = document.createElement("div");
+        favorite.className = "favorite-mark";
+        favorite.textContent = "Favorite";
+        textWrap.appendChild(favorite);
+      }
+
+      const tag = document.createElement("div");
+      tag.className = "learn-tag";
+      tag.textContent = card.tag || "Saved";
+      head.append(textWrap, tag);
+
+      const actions = document.createElement("div");
+      actions.className = "saved-card-actions";
+
+      const play = document.createElement("button");
+      play.className = "btn small";
+      play.type = "button";
+      play.textContent = "\uD83D\uDD0A Play";
+      play.addEventListener("click", () => playLearningCard(card.id, play));
+
+      const remove = document.createElement("button");
+      remove.className = "btn small";
+      remove.type = "button";
+      remove.textContent = "Remove";
+      remove.addEventListener("click", () => removeLearningCard(card.id));
+
+      actions.append(play, remove);
+      item.append(head, actions);
+      savedCards.appendChild(item);
+    });
+  }
+
+  function submitReview(remembered) {
+    if (!currentReviewCard) return;
+    const result = Learning.reviewCard(learningCards, currentReviewCard.id, remembered);
+    learningCards = result.cards;
+    currentReviewCard = null;
+    saveLearningCards();
+    renderLearning();
+  }
+
+  function addStarterCards() {
+    addPackCards("survival-thai");
+  }
+
+  function addPackCards(packId) {
+    const result = Learning.addPack(learningCards, packId);
+    learningCards = result.cards;
+    saveLearningCards();
+    selectedCategory = "All";
+    currentReviewCard = null;
+    renderLearning();
+  }
+
+  function renderPacks() {
+    packList.textContent = "";
+    Learning.getPackSummaries(learningCards).forEach((pack) => {
+      const row = document.createElement("div");
+      row.className = "pack-row";
+
+      const info = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "pack-title";
+      title.textContent = pack.name;
+      const desc = document.createElement("div");
+      desc.className = "pack-desc";
+      desc.textContent = pack.description;
+      const meta = document.createElement("div");
+      meta.className = "pack-meta";
+      meta.textContent = `${pack.addedCount}/${pack.totalCount} cards added`;
+      info.append(title, desc, meta);
+
+      const add = document.createElement("button");
+      add.className = "btn small";
+      add.type = "button";
+      add.disabled = pack.missingCount === 0;
+      add.textContent = pack.missingCount === 0
+        ? "Added"
+        : (pack.missingCount === pack.totalCount ? `Add ${pack.totalCount}` : `Add Missing ${pack.missingCount}`);
+      add.addEventListener("click", () => addPackCards(pack.id));
+
+      row.append(info, add);
+      packList.appendChild(row);
+    });
+  }
+
+  function resetLearning() {
+    if (learningCards.length && !confirm("Reset all saved learning cards and progress?")) return;
+    learningCards = Learning.resetCards(learningCards);
+    localStorage.removeItem(LEARNING_STORAGE_KEY);
+    currentReviewCard = null;
+    selectedCategory = "All";
+    renderLearning();
+  }
+
+  async function playLearningCard(cardId, button) {
+    let card = learningCards.find((item) => item.id === cardId);
+    if (!card) return;
+
+    if (card.audioBase64) {
+      playAudio(card.audioBase64);
+      return;
+    }
+
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = "\u23F3 ...";
+    try {
+      const res = await apiFetch("/api/translate/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: card.thaiText, voice: voiceSelect.value }),
+      });
+      const result = Learning.updateCardAudio(learningCards, card.id, res.data.audioBase64 || "");
+      learningCards = result.cards;
+      saveLearningCards();
+      card = learningCards.find((item) => item.id === cardId);
+      if (currentReviewCard?.id === cardId && card) currentReviewCard = card;
+      if (card?.audioBase64) playAudio(card.audioBase64);
+    } catch (err) {
+      alert("Could not create audio for this card. " + err.message);
+    } finally {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  }
+
+  function removeLearningCard(cardId) {
+    learningCards = learningCards.filter((card) => card.id !== cardId);
+    if (currentReviewCard?.id === cardId) currentReviewCard = null;
+    saveLearningCards();
+    renderLearning();
   }
 
   const stopAudioBtn = $("#stopAudioBtn");
@@ -469,6 +989,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
           body: JSON.stringify({ text: translated, voice: voiceSelect.value }),
         });
         lastAudioBase64 = res.data.audioBase64 || null;
+        if (lastTranslationData) lastTranslationData.audioBase64 = lastAudioBase64 || "";
         playBtn.disabled = !lastAudioBase64;
         if (autoPlay && lastAudioBase64) playAudio(lastAudioBase64);
       } catch { /* ignore TTS failure */ }
@@ -523,6 +1044,12 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     lastAudioBase64 = null;
     playBtn.disabled = true;
     copyBtn.disabled = true;
+    lastTranslationData = null;
+    saveCardBtn.disabled = true;
+    favoriteCardBtn.disabled = true;
+    saveCardBtn.textContent = "+ Save to Learn";
+    favoriteCardBtn.textContent = "Save Favorite";
+    setSaveStatus("");
   });
 
   async function apiFetch(path, opts = {}) {

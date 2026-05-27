@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npx --yes vercel@54.2.0 dev"
+    "dev": "npx --yes vercel@54.2.0 dev",
+    "test": "node --test test/*.test.cjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

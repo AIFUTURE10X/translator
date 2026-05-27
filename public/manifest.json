@@ -1,7 +1,7 @@
 {
-  "name": "AI Crew Pilot Translator",
-  "short_name": "Translator",
-  "description": "Voice, text & image translation with multilingual TTS",
+  "name": "AI Crew Pilot Thai Learning",
+  "short_name": "Thai Learning",
+  "description": "Thai translation, pronunciation, saved phrases, and daily review",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
