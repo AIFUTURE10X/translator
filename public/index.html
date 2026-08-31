@@ -361,6 +361,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   let isRecording = false;
   let autoPlay = localStorage.getItem("translator_autoplay") === "true";
   let lastAudioBase64 = null;
+  let translationAudioRequest = null;
   let currentAbort = null;
   let currentAudio = null;
   let currentSpeech = null;
@@ -380,6 +381,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     autoPlay = !autoPlay;
     syncAutoPlayToggle();
     localStorage.setItem("translator_autoplay", String(autoPlay));
+    if (!autoPlay && translationAudioRequest?.automatic) stopPlayback();
   }
   syncAutoPlayToggle();
   autoPlayToggle.addEventListener("click", toggleAutoPlay);
@@ -490,8 +492,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
           text,
           sourceLang: sourceLangEl.value,
           targetLang: targetLangEl.value,
-          tts: true,
-          voice: voiceSelect.value,
+          tts: false,
         }),
       });
       showResult(res.data);
@@ -636,9 +637,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   });
 
   // -- Play / Copy --
-  playBtn.addEventListener("click", () => {
-    if (lastAudioBase64) playAudio(lastAudioBase64);
-  });
+  playBtn.addEventListener("click", () => playTranslationAudio());
   copyBtn.addEventListener("click", () => {
     const text = outputText.textContent;
     if (text) {
@@ -667,6 +666,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   const phoneticText = $("#phoneticText");
 
   function showResult(data) {
+    stopPlayback();
     outputText.textContent = data.translatedText || "";
     outputText.classList.toggle("empty", !data.translatedText);
 
@@ -678,7 +678,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     }
 
     lastAudioBase64 = data.audioBase64 || null;
-    playBtn.disabled = !lastAudioBase64;
+    playBtn.disabled = !data.translatedText;
     copyBtn.disabled = !data.translatedText;
     const effectiveSourceLang = sourceLangEl.value === "auto" && data.detectedLang
       ? data.detectedLang
@@ -697,12 +697,11 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     favoriteCardBtn.textContent = "Save Favorite";
     setSaveStatus("");
 
-    if (autoPlay && lastAudioBase64) {
-      playAudio(lastAudioBase64);
-    }
+    if (autoPlay) void playTranslationAudio(true);
   }
 
   function showError(msg) {
+    stopPlayback();
     outputText.textContent = "Error: " + msg;
     outputText.classList.remove("empty");
     phoneticText.style.display = "none";
@@ -1034,29 +1033,55 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   const voiceSelect = $("#voiceSelect");
   const savedVoice = localStorage.getItem("translator_voice");
   if (savedVoice) voiceSelect.value = savedVoice;
-  voiceSelect.addEventListener("change", async () => {
+  voiceSelect.addEventListener("change", () => {
     localStorage.setItem("translator_voice", voiceSelect.value);
-    // Regenerate TTS with new voice if we have a translation
-    const translated = outputText.textContent;
-    if (translated && !outputText.classList.contains("empty")) {
-      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-      setAudioStopVisible(false);
-      playBtn.disabled = true;
-      playBtn.textContent = "\u23F3 ...";
-      try {
-        const res = await apiFetch("/api/translate/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: translated, voice: voiceSelect.value }),
-        });
-        lastAudioBase64 = res.data.audioBase64 || null;
-        if (lastTranslationData) lastTranslationData.audioBase64 = lastAudioBase64 || "";
-        playBtn.disabled = !lastAudioBase64;
-        if (autoPlay && lastAudioBase64) playAudio(lastAudioBase64);
-      } catch { /* ignore TTS failure */ }
-      playBtn.textContent = "\uD83D\uDD0A Play";
-    }
+    stopPlayback();
+    lastAudioBase64 = null;
+    if (lastTranslationData) lastTranslationData.audioBase64 = "";
+    if (autoPlay) void playTranslationAudio(true);
   });
+
+  // Speech has its own request lifecycle so it never blocks text or its Stop button.
+  async function playTranslationAudio(automatic = false) {
+    if (!lastTranslationData?.translatedText || translationAudioRequest) return;
+    if (lastAudioBase64) { playAudio(lastAudioBase64); return; }
+
+    const request = {
+      controller: new AbortController(),
+      translation: lastTranslationData,
+      voice: voiceSelect.value,
+      automatic,
+    };
+    translationAudioRequest = request;
+    playBtn.disabled = true;
+    playBtn.textContent = "\u23F3 Audio...";
+    playBtn.title = "";
+    setAudioStopVisible(true);
+    try {
+      const res = await apiFetch("/api/translate/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: request.translation.translatedText, voice: request.voice }),
+        signal: request.controller.signal,
+      });
+      if (translationAudioRequest !== request) return;
+      lastAudioBase64 = res.data.audioBase64 || null;
+      if (!lastAudioBase64) throw new Error("No audio returned");
+      request.translation.audioBase64 = lastAudioBase64;
+      if (!automatic || autoPlay) playAudio(lastAudioBase64);
+    } catch (err) {
+      if (translationAudioRequest === request && err.name !== "AbortError") {
+        playBtn.title = "Could not create audio. Press Play to retry.";
+      }
+    } finally {
+      if (translationAudioRequest === request) {
+        translationAudioRequest = null;
+        playBtn.disabled = !lastTranslationData?.translatedText;
+        playBtn.textContent = "\uD83D\uDD0A Play";
+        if (!currentAudio && !currentSpeech) setAudioStopVisible(false);
+      }
+    }
+  }
 
   const speedSelect = $("#speedSelect");
   const savedSpeed = localStorage.getItem("translator_speed");
@@ -1117,6 +1142,11 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   }
 
   function stopPlayback() {
+    translationAudioRequest?.controller.abort();
+    translationAudioRequest = null;
+    playBtn.disabled = !lastTranslationData?.translatedText;
+    playBtn.textContent = "\uD83D\uDD0A Play";
+    playBtn.title = "";
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
     if (currentSpeech && window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -1129,6 +1159,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   learnStopAudioBtn.addEventListener("click", stopPlayback);
 
   function showLoading(on) {
+    if (on) stopPlayback();
     $("#loading").classList.toggle("active", on);
     if (!on) currentAbort = null;
   }
@@ -1144,6 +1175,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
   // -- Clear button --
   $("#clearBtn").addEventListener("click", () => {
+    stopPlayback();
     sourceText.value = "";
     outputText.textContent = "Translation will appear here";
     outputText.classList.add("empty");
@@ -1160,11 +1192,11 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   });
 
   async function apiFetch(path, opts = {}) {
-    const controller = new AbortController();
-    currentAbort = controller;
+    const controller = opts.signal ? null : new AbortController();
+    if (controller) currentAbort = controller;
     let res;
     try {
-      res = await fetch(API_BASE + path, { ...opts, headers: opts.headers, signal: controller.signal });
+      res = await fetch(API_BASE + path, { ...opts, headers: opts.headers, signal: opts.signal || controller.signal });
     } catch (err) {
       if (IS_FILE_MODE) {
         throw new Error("Local translation server is not running. Start it with npm run local, then refresh this page.");

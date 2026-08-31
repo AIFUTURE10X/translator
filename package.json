@@ -6,6 +6,7 @@
     "build": "tsc",
     "dev": "npx --yes vercel@54.2.0 dev",
     "local": "npm run build && node server.cjs",
+    "pretest": "npm run build",
     "test": "node --test test/*.test.cjs"
   },
   "devDependencies": {
