@@ -328,6 +328,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 <div class="loading" id="loading"><div class="spinner"></div><button class="btn danger" id="stopBtn">Stop</button></div>
 
 <script src="learning.js"></script>
+<script src="streaming-audio.js"></script>
 <script>
 (function(){
   const $ = (s) => document.querySelector(s);
@@ -362,6 +363,9 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   let autoPlay = localStorage.getItem("translator_autoplay") === "true";
   let lastAudioBase64 = null;
   let translationAudioRequest = null;
+  let speechContext = null;
+  let currentStreamAudio = null;
+  let currentSpeechController = null;
   let currentAbort = null;
   let currentAudio = null;
   let currentSpeech = null;
@@ -997,22 +1001,22 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
     if (IS_FILE_MODE && playBrowserSpeech(card.thaiText)) return;
 
+    stopPlayback();
+    const controller = new AbortController();
     const originalText = button.textContent;
     button.disabled = true;
     button.textContent = "\u23F3 ...";
     try {
-      const res = await apiFetch("/api/translate/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: card.thaiText, voice: voiceSelect.value }),
-      });
-      const result = Learning.updateCardAudio(learningCards, card.id, res.data.audioBase64 || "");
+      const speech = await requestSpeechAudio(card.thaiText, voiceSelect.value, controller);
+      if (controller.signal.aborted) return;
+      const result = Learning.updateCardAudio(learningCards, card.id, speech.audioBase64 || "");
       learningCards = result.cards;
       saveLearningCards();
       card = learningCards.find((item) => item.id === cardId);
       if (currentReviewCard?.id === cardId && card) currentReviewCard = card;
-      if (card?.audioBase64) playAudio(card.audioBase64);
+      if (card?.audioBase64 && !speech.streamed) playAudio(card.audioBase64);
     } catch (err) {
+      if (controller.signal.aborted) return;
       if (playBrowserSpeech(card.thaiText)) return;
       alert("Could not create audio for this card. " + err.message);
     } finally {
@@ -1058,17 +1062,14 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     playBtn.title = "";
     setAudioStopVisible(true);
     try {
-      const res = await apiFetch("/api/translate/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: request.translation.translatedText, voice: request.voice }),
-        signal: request.controller.signal,
+      const speech = await requestSpeechAudio(request.translation.translatedText, request.voice, request.controller, () => {
+        if (translationAudioRequest === request) playBtn.textContent = "\uD83D\uDD0A Playing...";
       });
       if (translationAudioRequest !== request) return;
-      lastAudioBase64 = res.data.audioBase64 || null;
+      lastAudioBase64 = speech.audioBase64 || null;
       if (!lastAudioBase64) throw new Error("No audio returned");
       request.translation.audioBase64 = lastAudioBase64;
-      if (!automatic || autoPlay) playAudio(lastAudioBase64);
+      if (!speech.streamed && (!automatic || autoPlay)) playAudio(lastAudioBase64);
     } catch (err) {
       if (translationAudioRequest === request && err.name !== "AbortError") {
         playBtn.title = "Could not create audio. Press Play to retry.";
@@ -1078,8 +1079,63 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
         translationAudioRequest = null;
         playBtn.disabled = !lastTranslationData?.translatedText;
         playBtn.textContent = "\uD83D\uDD0A Play";
-        if (!currentAudio && !currentSpeech) setAudioStopVisible(false);
+        if (!currentAudio && !currentSpeech && !currentStreamAudio) setAudioStopVisible(false);
       }
+    }
+  }
+
+  function prepareSpeechContext() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!window.StreamingAudio || !AudioContextClass || typeof ReadableStream === "undefined") return null;
+    try {
+      if (!speechContext || speechContext.state === "closed") speechContext = new AudioContextClass();
+      // Call during the Translate/Play gesture, before awaiting any network work.
+      speechContext.resume().catch(() => {});
+      return speechContext;
+    } catch { return null; }
+  }
+
+  async function requestSpeechAudio(text, voice, controller, onstart = () => {}) {
+    currentSpeechController?.abort();
+    currentStreamAudio?.stop();
+    currentStreamAudio = null;
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    if (currentSpeech && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      currentSpeech = null;
+    }
+    currentSpeechController = controller;
+    const context = prepareSpeechContext();
+    let player = null;
+    setAudioStopVisible(true);
+    if (context) {
+      player = new window.StreamingAudio.Player({
+        context, rate: parseFloat(speedSelect.value) || 1, signal: controller.signal, onstart,
+        onended: () => {
+          if (currentStreamAudio === player) {
+            currentStreamAudio = null;
+            if (!currentAudio && !currentSpeech) setAudioStopVisible(false);
+          }
+        },
+      });
+      currentStreamAudio = player;
+    }
+    try {
+      const res = await apiFetch("/api/translate/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, voice, ...(player ? { stream: true } : {}) }),
+        signal: controller.signal,
+        rawResponse: !!player,
+      });
+      if (controller.signal.aborted) throw new DOMException("Playback stopped", "AbortError");
+      const audioBase64 = player ? await player.read(res) : res.data.audioBase64;
+      return { audioBase64, streamed: !!player };
+    } catch (err) {
+      player?.stop();
+      throw err;
+    } finally {
+      if (currentSpeechController === controller) currentSpeechController = null;
     }
   }
 
@@ -1089,9 +1145,14 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   speedSelect.addEventListener("change", () => {
     localStorage.setItem("translator_speed", speedSelect.value);
     if (currentAudio) currentAudio.playbackRate = parseFloat(speedSelect.value);
+    currentStreamAudio?.setRate(parseFloat(speedSelect.value));
   });
 
   function playAudio(base64) {
+    currentSpeechController?.abort();
+    currentSpeechController = null;
+    currentStreamAudio?.stop();
+    currentStreamAudio = null;
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
     if (currentSpeech && window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -1110,6 +1171,9 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return false;
     if (!text) return false;
 
+    currentSpeechController?.abort();
+    currentStreamAudio?.stop();
+    currentStreamAudio = null;
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
     window.speechSynthesis.cancel();
 
@@ -1142,6 +1206,10 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   }
 
   function stopPlayback() {
+    currentSpeechController?.abort();
+    currentSpeechController = null;
+    currentStreamAudio?.stop();
+    currentStreamAudio = null;
     translationAudioRequest?.controller.abort();
     translationAudioRequest = null;
     playBtn.disabled = !lastTranslationData?.translatedText;
@@ -1160,6 +1228,7 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
 
   function showLoading(on) {
     if (on) stopPlayback();
+    if (on && autoPlay) prepareSpeechContext();
     $("#loading").classList.toggle("active", on);
     if (!on) currentAbort = null;
   }
@@ -1192,17 +1261,19 @@ header .sub{font-size:14px;color:var(--muted);font-weight:400}
   });
 
   async function apiFetch(path, opts = {}) {
+    const { rawResponse, ...fetchOptions } = opts;
     const controller = opts.signal ? null : new AbortController();
     if (controller) currentAbort = controller;
     let res;
     try {
-      res = await fetch(API_BASE + path, { ...opts, headers: opts.headers, signal: opts.signal || controller.signal });
+      res = await fetch(API_BASE + path, { ...fetchOptions, signal: opts.signal || controller.signal });
     } catch (err) {
       if (IS_FILE_MODE) {
         throw new Error("Local translation server is not running. Start it with npm run local, then refresh this page.");
       }
       throw err;
     }
+    if (rawResponse && res.ok) return res;
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || "Request failed");
     return json;

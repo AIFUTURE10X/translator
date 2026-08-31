@@ -22,7 +22,7 @@ function element() {
   };
 }
 
-function createUI({ fetch, autoPlay = false }) {
+function createUI({ fetch, autoPlay = false, audioContext }) {
   const html = fs.readFileSync(path.join(__dirname, "../../public/index.html"), "utf8");
   const elements = new Map([...html.matchAll(/id="([^"]+)"/g)].map((match) => [`#${match[1]}`, element()]));
   elements.set('label[for="autoPlayToggle"]', element());
@@ -34,7 +34,10 @@ function createUI({ fetch, autoPlay = false }) {
   const context = vm.createContext({
     document: { querySelector: (selector) => elements.get(selector), createElement: element },
     location: { protocol: "http:", origin: "http://translator.test" },
-    window: { ThaiLearning: Learning },
+    window: { ThaiLearning: Learning, ...(audioContext ? {
+      StreamingAudio: require("../../public/streaming-audio.js"),
+      AudioContext: class { constructor() { return audioContext; } },
+    } : {}) },
     localStorage: { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key) },
     navigator: { clipboard: { writeText: async () => {} } },
     Audio: class {
@@ -44,6 +47,7 @@ function createUI({ fetch, autoPlay = false }) {
       addEventListener() {}
     },
     fetch, AbortController, URLSearchParams, console, setTimeout, clearTimeout,
+    ReadableStream, DOMException,
     alert(message) { throw new Error(message); }, confirm: () => true,
   });
   const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1];
