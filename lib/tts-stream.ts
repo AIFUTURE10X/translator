@@ -1,4 +1,4 @@
-const STREAM_MODEL = process.env.TRANSLATE_TTS_STREAM_MODEL || "gemini-3.1-flash-tts-preview";
+const STREAM_MODEL = process.env.TRANSLATE_TTS_STREAM_MODEL || "gemini-3.8-flash-tts";
 
 /** Forward only PCM audio, never provider metadata or credentials, to the player. */
 export async function* streamSpeech(text: string, voice: string | undefined, signal: AbortSignal) {
@@ -8,15 +8,17 @@ export async function* streamSpeech(text: string, voice: string | undefined, sig
     throw new Error("Invalid streaming speech model");
   }
   const model = STREAM_MODEL.replace(/^models\//, "");
+  const voiceName = voice || process.env.TRANSLATE_TTS_VOICE || "Kore";
+  const prebuiltVoiceConfig = model.startsWith("gemini-3.8-") ? { voice: voiceName } : { voiceName };
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: `Synthesize speech. Read only the transcript below, exactly as written.\nTranscript: ${text}` }] }],
+      contents: [{ role: "user", parts: [{ text }] }],
       generationConfig: {
         responseModalities: ["AUDIO"],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || process.env.TRANSLATE_TTS_VOICE || "Kore" } } },
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig } },
       },
     }),
   });

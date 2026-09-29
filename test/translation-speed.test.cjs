@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { createUI, flush, deferred } = require("./helpers/translator-ui.cjs");
 
 process.env.GOOGLE_AI_API_KEY = "local-fixture-only";
+process.env.OPENAI_API_KEY = "local-fixture-only";
 const textHandler = require("../dist/api/translate/text.js").default;
 const ttsHandler = require("../dist/api/translate/tts.js").default;
 const languagesHandler = require("../dist/api/translate/languages.js").default;
@@ -24,9 +25,12 @@ async function setup(t, autoPlay = false) {
         { inlineData: { mimeType: "audio/pcm", data: Buffer.alloc(4).toString("base64") } },
       ] } }] }));
     }
-    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify({
-      translatedText: "ขอบคุณ", detectedLang: "en", phonetic: "khop khun",
-    }) }] } }] }));
+    return new Response(JSON.stringify({ output: [{
+      type: "message",
+      content: [{ type: "output_text", text: JSON.stringify({
+        translatedText: "ขอบคุณ", detectedLang: "en", phonetic: "khop khun",
+      }) }],
+    }] }));
   });
   const ui = createUI({ autoPlay, fetch: async (url, options = {}) => {
     const route = new URL(url).pathname;
@@ -129,7 +133,7 @@ test("voice changes discard late audio and use the selected voice", async (t) =>
   await flush();
   assert.equal(ui.played.length, 0);
   assert.equal(ui.get("playBtn").disabled, true, "Old request must not unlock the new request's button");
-  assert.equal(ui.speech[1].body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, "Puck");
+  assert.equal(ui.speech[1].body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voice, "Puck");
   ui.speech[1].resolve();
   await flush();
   assert.equal(ui.played.length, 1);
@@ -174,7 +178,7 @@ test("changing voice with auto-play off does not request speech until Play", asy
   assert.equal(ui.speech.length, 0);
   const playing = ui.get("playBtn").dispatch("click");
   await flush();
-  assert.equal(ui.speech[0].body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, "Puck");
+  assert.equal(ui.speech[0].body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voice, "Puck");
   ui.speech[0].resolve();
   await playing;
   assert.equal(ui.played.length, 1);

@@ -45,9 +45,9 @@ test("streams the first speech chunk before generation finishes", async (t) => {
     assert.equal(res.chunks.length, 1, "Client must receive audio before the provider finishes");
     assert.equal(res.writableEnded, false);
     assert.deepEqual(JSON.parse(res.chunks[0]), { audioBase64: pcm, sampleRate: 24000 });
-    assert.match(requested.url, /gemini-3\.1-flash-tts-preview:streamGenerateContent/);
+    assert.match(requested.url, /gemini-3\.8-flash-tts:streamGenerateContent/);
     assert.ok(!requested.url.includes("key="));
-    assert.equal(JSON.parse(requested.options.body).generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, "Puck");
+    assert.equal(JSON.parse(requested.options.body).generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voice, "Puck");
   } finally {
     if (upstream) { upstream.enqueue(event({ candidates: [{ finishReason: "STOP" }] })); upstream.close(); }
     release.resolve();
